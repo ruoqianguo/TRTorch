@@ -3,6 +3,7 @@
 #include "core/conversion/tensorcontainer/TensorContainer.h"
 #include "core/util/prelude.h"
 #include "core/util/trt_util.h"
+#include "plugins/checkshape_plugin.h"
 #include "torch/torch.h"
 
 #include <ATen/ATen.h>
@@ -14,6 +15,33 @@ namespace conversion {
 namespace converters {
 namespace impl {
 namespace {
+
+nvinfer1::ILayer* create_plugin(
+    ConversionCtx* ctx,
+    const torch::jit::Node* n,
+    nvinfer1::ITensor* inShape,
+    nvinfer1::ITensor* expandShape,
+    int32_t in_rank,
+    int32_t expand_rank,
+    const char* name) {
+  auto creator = new plugins::CheckShapePluginCreator();
+  std::vector<nvinfer1::PluginField> fields;
+  nvinfer1::PluginField input_rank("input_rank", &in_rank, nvinfer1::PluginFieldType::kINT32, 1);
+  nvinfer1::PluginField output_rank("expand_rank", &expand_rank, nvinfer1::PluginFieldType::kINT32, 1);
+  fields.push_back(input_rank);
+  fields.push_back(output_rank);
+  nvinfer1::PluginFieldCollection collection;
+  collection.nbFields = fields.size();
+  collection.fields = fields.data();
+  auto plugin = creator->createPlugin(name, &collection);
+
+  nvinfer1::ITensor* inputs[] = {inShape, expandShape};
+  auto expandShape_layer = ctx->net->addPluginV2(inputs, 2, *plugin);
+  TRTORCH_CHECK(expandShape_layer, "Unable to create interpolation plugin from node" << *n);
+
+  expandShape_layer->setName("CheckShapePlugin");
+  return expandShape_layer;
+}
 
 void addSliceInput(nvinfer1::Dims& dims, int idx, ConversionCtx* ctx, nvinfer1::ISliceLayer* slice) {
   int64_t rank = dims.nbDims;
@@ -59,12 +87,23 @@ bool add_expand(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1::ITensor
     int64_t dim = input_dims.nbDims - 1 - offset;
     int64_t size = (dim >= 0) ? input_dims.d[dim] : 1;
     int64_t targetSize = expandedDims.d[i];
-    if (size != targetSize) {
-      if (size != 1) {
-        TRTORCH_THROW_ERROR(
-            "The expanded size of tensor (" << targetSize << ")"
-                                            << " must match the existing size (" << size << ")"
-                                            << " at dimension " << i);
+    if(targetSize != -1){
+      if (size != targetSize) {
+        if (size != 1) {
+          TRTORCH_THROW_ERROR(
+              "The expanded size of tensor (" << targetSize << ")"
+                                              << " must match the existing size (" << size << ")"
+                                              << " at dimension " << i);
+        }
+      }
+    }else{
+      if(dim < 0){
+        TRTORCH_THROW_ERROR("The expanded size of the tensor (" << \
+            targetSize << ") isn't allowed in a leading, non-existing dimension " << \
+            i);
+      }else{
+        // in(3, 1), expand(3, -1, 4) -> expand(3, 3, 4)
+        expandedDims.d[i] = input_dims.d[dim];
       }
     }
   }
@@ -109,16 +148,22 @@ bool add_expand(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1::ITensor
 }
 
 bool add_expand_dynamic(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1::ITensor* in, nvinfer1::ITensor* expandedDimsTensor){
+  auto input_shape_tensor =  ctx->net->addShape(*in)->getOutput(0);
   auto input_rank = in->getDimensions().nbDims;
   auto output_rank = expandedDimsTensor->getDimensions().d[0];
   TRTORCH_CHECK(
       input_rank <= output_rank,
       "Number of dimensions of the desired expansion must be greater than or equal to the number of input dimensions");
   
+  // add a plugin to check expandedDimsTensor whether match input_shape_tensor
+  auto expandShape_layer = create_plugin(ctx, n, input_shape_tensor, expandedDimsTensor, input_rank, output_rank, "expandShape");
+  auto _tensor = expandShape_layer->getOutput(0);
+  
   size_t max_rank = std::max(input_rank, output_rank);
 
   // Dimensions are right alignment
   auto new_input_shape_tensor = concat(max_rank, input_rank, ctx, in);
+  // LOG_DEBUG("Expand layer output tensor shape: " << new_output_shape_tensor->getDimensions());
   auto new_output_shape_tensor = expandedDimsTensor;
 
   // Add a reshape layer to expand dims
@@ -129,18 +174,8 @@ bool add_expand_dynamic(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1:
   std::vector<int64_t> start_vec(max_rank, 0);
   nvinfer1::Dims starts_dim = util::toDims(c10::IntArrayRef(start_vec));
 
-  // broadcast
-  // max(x,y) works unless x or y is 0.
-  // min(x,y,1) yields 0 if x or y is 0, and 1 otherwise.
-  // So compute max(x,y)*min(x,y,1).
-  int32_t* one_tmp = new int32_t[max_rank];
-  for(int i=0;i<max_rank;i++)
-    one_tmp[i] = 1;
-  auto one = vec2Tensor(one_tmp, max_rank, ctx);
-  auto min_y_1 = ctx->net->addElementWise(*new_output_shape_tensor, *one, nvinfer1::ElementWiseOperation::kMIN)->getOutput(0);
-  auto min_x_y_1 = ctx->net->addElementWise(*new_input_shape_tensor, *min_y_1, nvinfer1::ElementWiseOperation::kMIN)->getOutput(0);
-  auto max_x_y = ctx->net->addElementWise(*new_input_shape_tensor, *new_output_shape_tensor, nvinfer1::ElementWiseOperation::kMAX)->getOutput(0);
-  auto sizes = ctx->net->addElementWise(*max_x_y, *min_x_y_1, nvinfer1::ElementWiseOperation::kPROD)->getOutput(0);
+  // compute sizes = max(x,y).
+  auto sizes = ctx->net->addElementWise(*new_input_shape_tensor, *new_output_shape_tensor, nvinfer1::ElementWiseOperation::kMAX)->getOutput(0);
   nvinfer1::Dims sizes_dim{-1, {}, {}};
   sizes_dim.nbDims = max_rank;
   

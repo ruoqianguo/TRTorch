@@ -10,10 +10,12 @@ config_setting(
 cc_library(
     name = "plugins",
     hdrs = [
-        "interpolate_plugin.h"
+        "interpolate_plugin.h",
+        "checkshape_plugin.h"
     ],
     srcs = [
-        "interpolate_plugin.cpp"
+        "interpolate_plugin.cpp",
+        "checkshape_plugin.cpp"
     ],
     deps = [
         "@tensorrt//:nvinfer",
