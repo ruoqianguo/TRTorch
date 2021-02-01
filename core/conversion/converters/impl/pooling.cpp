@@ -315,9 +315,16 @@ auto pooling_registrations TRTORCH_UNUSED =
                auto out_shape = in_shape;
                std::copy(out_size.begin(), out_size.end(), out_shape.begin() + (in_shape.size() - out_size.size()));
 
-               auto creator = new plugins::InterpolatePluginCreator();
-               auto plugin = creator->createPlugin(
-                   "adaptive_pool2d", in_shape, out_shape, out_size, std::string("adaptive_pool2d"), false);
+                 auto creator = new plugins::InterpolatePluginCreator();
+                 auto plugin = creator->createPlugin(
+                     "adaptive_pool2d",
+                     in_shape,
+                     out_shape,
+                     out_size,
+                     {},
+                     std::string("adaptive_pool2d"),
+                     false,
+                     false);
 
                auto pooling_layer = ctx->net->addPluginV2(reinterpret_cast<nvinfer1::ITensor* const*>(&in), 1, *plugin);
                TRTORCH_CHECK(pooling_layer, "Unable to create pooling (interpolation) plugin from node" << *n);

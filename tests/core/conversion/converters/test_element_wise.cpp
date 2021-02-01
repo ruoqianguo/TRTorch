@@ -76,6 +76,16 @@ TEST(Converters, ATenAddImplicitWithAlphaConvertsCorrectly) {
   pointwise_test_helper(graph, false, true, {3, 4, 3}, {4, 3});
 }
 
+TEST(Converters, ATenAddWithScalarConvertsCorrectly) {
+  const auto graph = R"IR(
+      graph(%0 : Tensor):
+        %2 : int = prim::Constant[value=1]()
+        %scalar : float = prim::Constant[value=2.4]()
+        %3 : Tensor = aten::add(%0, %scalar, %2)
+        return (%3))IR";
+  pointwise_test_helper(graph, true);
+}
+
 TEST(Converters, ATenSubConvertsCorrectly) {
   const auto graph = R"IR(
       graph(%0 : Tensor, %1 : Tensor):
@@ -122,6 +132,15 @@ TEST(Converters, ATenDivConvertsCorrectly) {
   pointwise_test_helper(graph, false, true, {4, 3}, {3, 4, 3});
 }
 
+TEST(Converters, ATenDivWithScalarConvertsCorrectly) {
+  const auto graph = R"IR(
+      graph(%0 : Tensor):
+        %scalar : float = prim::Constant[value=2.4]()
+        %1 : Tensor = aten::div(%0, %scalar)
+        return (%1))IR";
+  pointwise_test_helper(graph, true);
+}
+
 TEST(Converters, ATenPowTensorConvertsCorrectly) {
   const auto graph = R"IR(
        graph(%x.1 : Tensor, %x2.1 : Tensor):
@@ -143,14 +162,24 @@ TEST(Converters, ATenPowScalarConvertsCorrectly) {
   pointwise_test_helper(graph, true);
 }
 
-TEST(Converters, ATenAddWithScalarConvertsCorrectly) {
+TEST(Converters, ATenNeTensorConvertsCorrectly) {
   const auto graph = R"IR(
-      graph(%0 : Tensor):
-        %2 : int = prim::Constant[value=1]()
-        %scalar : float = prim::Constant[value=2.4]()
-        %3 : Tensor = aten::add(%0, %scalar, %2)
+    graph(%x.1 : Tensor,
+      %y.1 : Tensor):
+        %3 : Tensor = aten::ne(%x.1, %y.1)
         return (%3))IR";
-  pointwise_test_helper(graph, true);
+  pointwise_test_helper(graph, false, false, {3, 4}, {3, 4});
+  pointwise_test_helper(graph, false, true, {3, 4}, {3, 4});
+}
+
+TEST(Converters, ATenNeScalarConvertsCorrectly) {
+  const auto graph = R"IR(
+    graph(%x.1 : Tensor):
+            %2 : int = prim::Constant[value=2]()
+            %3 : Tensor = aten::ne(%x.1, %2)
+            return (%3))IR";
+  pointwise_test_helper(graph, true, false, {3, 4, 2});
+  ;
 }
 
 TEST(Converters, ATenFloorDivideConvertsCorrectly) {
