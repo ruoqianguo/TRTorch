@@ -37,7 +37,7 @@ nvinfer1::ILayer* create_plugin(
 
   nvinfer1::ITensor* inputs[] = {inShape, expandShape};
   auto expandShape_layer = ctx->net->addPluginV2(inputs, 2, *plugin);
-  TRTORCH_CHECK(expandShape_layer, "Unable to create interpolation plugin from node" << *n);
+  TRTORCH_CHECK(expandShape_layer, "Unable to create CheckShape plugin from node" << *n);
 
   expandShape_layer->setName("CheckShapePlugin");
   return expandShape_layer;
@@ -81,11 +81,12 @@ bool add_expand(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1::ITensor
       "Number of dimensions of the desired expansion must be greater than or equal to the number of input dimensions");
 
   // Validate the expansion. Eg: an input of [3, 1] can be expanded to [1, 3, 4] but not [3, 4, 1]
-  for (int i = expandedDims.nbDims - 1; i >= 0; --i) {
+  for (int64_t i = expandedDims.nbDims - 1; i >= 0; --i) {
     int64_t offset = expandedDims.nbDims - 1 - i;
     int64_t dim = input_dims.nbDims - 1 - offset;
     int64_t size = (dim >= 0) ? input_dims.d[dim] : 1;
     int64_t targetSize = expandedDims.d[i];
+    // Validate the expansion. Eg: an input of [3, 1] can be expanded to [3, -1, 4] but not [-1, 3, 4]. Passing -1 as the size for a dimension means not changing the size of that dimension.
     if (targetSize != -1) {
       if (size != targetSize) {
         if (size != 1) {
@@ -96,6 +97,7 @@ bool add_expand(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1::ITensor
         }
       }
     } else {
+      // Validate the expansion. For the new dimensions, the size cannot be set to -1. Eg: an input of [3, 1] can't be expanded to [-1, 3, 4]
       if (dim < 0) {
         TRTORCH_THROW_ERROR(
             "The expanded size of the tensor (" << targetSize << ") isn't allowed in a leading, non-existing dimension "
@@ -111,10 +113,10 @@ bool add_expand(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1::ITensor
   if (num_expand_dims > 0) {
     nvinfer1::Dims reshape_dims;
     reshape_dims.nbDims = expandedDims.nbDims;
-    for (int i = 0; i < num_expand_dims; i++) {
+    for (int64_t i = 0; i < num_expand_dims; i++) {
       reshape_dims.d[i] = 1;
     }
-    for (int i = 0; i < input_dims.nbDims; i++) {
+    for (int64_t i = 0; i < input_dims.nbDims; i++) {
       reshape_dims.d[num_expand_dims + i] = input_dims.d[i];
     }
     // Add a reshape layer to expand dims
@@ -130,7 +132,7 @@ bool add_expand(ConversionCtx* ctx, const torch::jit::Node* n, nvinfer1::ITensor
 
   // Set the stride of non singleton dimension to 1
   std::vector<int64_t> strides_vec(expandedDims.nbDims, 0);
-  for (int i = 0; i < expandedDims.nbDims; i++) {
+  for (int64_t i = 0; i < expandedDims.nbDims; i++) {
     strides_vec[i] = (in->getDimensions().d[i] != 1);
   }
 
@@ -150,7 +152,10 @@ bool add_expand_dynamic(
     ConversionCtx* ctx,
     const torch::jit::Node* n,
     nvinfer1::ITensor* in,
-    nvinfer1::ITensor* expandedDimsTensor) {
+    nvinfer1::ITensor* expandedDimsTensor,
+    nvinfer1::Dims* expandedDims=NULL) {
+  auto input_dims = in->getDimensions();
+  // LOG_DEBUG("input_dims: "<< input_dims<< ","<<*expandedDims);
   auto input_shape_tensor = ctx->net->addShape(*in)->getOutput(0);
   auto input_rank = in->getDimensions().nbDims;
   auto output_rank = expandedDimsTensor->getDimensions().d[0];
@@ -158,10 +163,41 @@ bool add_expand_dynamic(
       input_rank <= output_rank,
       "Number of dimensions of the desired expansion must be greater than or equal to the number of input dimensions");
 
+  // Validate the expansion. We don't validate the expansion in dynamic expand_as layer, beacuse we don't know the expandedDimsTensor before setBindingDimensions. 
+  if(expandedDims){
+    // Eg: an input of [3, 1] can be expanded to [1, 3, 4] but not [3, 4, 1]
+    for (int64_t i = expandedDims->nbDims - 1; i >= 0; --i) {
+      int64_t offset = expandedDims->nbDims - 1 - i;
+      int64_t dim = input_dims.nbDims - 1 - offset;
+      int64_t size = (dim >= 0) ? input_dims.d[dim] : 1;
+      int64_t targetSize = expandedDims->d[i];
+      // Validate the expansion. Passing -1 as the size for a dimension means not changing the size of that dimension. 
+      if (targetSize != -1) {
+        if (size != targetSize) {
+          if (!(size == -1 || size == 1)) {  // if size == -1, we can't validate the expansion before setBindingDimensions
+            TRTORCH_THROW_ERROR(
+                "The expanded size of tensor (" << targetSize << ")"
+                                                << " must match the existing size (" << size << ")"
+                                                << " at dimension " << i);
+          }
+        }
+      } else {
+        // Validate the expansion. For the new dimensions, the size cannot be set to -1. Eg: an input of [3, 1] can be expanded to [3, -1, 4] but not [-1, 3, 4]. 
+        if (dim < 0) {
+          TRTORCH_THROW_ERROR(
+              "The expanded size of the tensor (" << targetSize << ") isn't allowed in a leading, non-existing dimension "
+                                                  << i);
+        } 
+      }
+    }
+  }
+
   // add a plugin to check expandedDimsTensor whether match input_shape_tensor
   auto expandShape_layer =
       create_plugin(ctx, n, input_shape_tensor, expandedDimsTensor, input_rank, output_rank, "expandShape");
   auto _tensor = expandShape_layer->getOutput(0);
+  in = ctx->net->addElementWise(*in, *_tensor, nvinfer1::ElementWiseOperation::kSUM)
+          ->getOutput(0);
 
   size_t max_rank = std::max(input_rank, output_rank);
 
@@ -225,7 +261,7 @@ auto expand_registrations TRTORCH_UNUSED =
                  for (int i = 0; i < expanded_size_rank; i++)
                    tmp[i] = expanded_size[i];
                  auto expandedDimsTensor = vec2Tensor(tmp, expanded_size_rank, ctx);
-                 return add_expand_dynamic(ctx, n, in, expandedDimsTensor);
+                 return add_expand_dynamic(ctx, n, in, expandedDimsTensor, &expandedDims);
                } else {
                  return add_expand(ctx, n, in, expandedDims);
                }
