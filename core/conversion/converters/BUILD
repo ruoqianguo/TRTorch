@@ -41,6 +41,7 @@ cc_library(
         "impl/element_wise.cpp",
         "impl/linear.cpp",
         "impl/matrix_multiply.cpp",
+        "impl/normalize.cpp",
         "impl/pooling.cpp",
         "impl/reduce.cpp",
         "impl/shuffle.cpp",
@@ -48,11 +49,11 @@ cc_library(
         "impl/unary.cpp",
         "impl/interpolate.cpp",
         "impl/select.cpp",
+        "impl/squeeze.cpp",
         "impl/stack.cpp",
         "impl/lstm_cell.cpp",
         "impl/topk.cpp",
         "impl/unsqueeze.cpp",
-        "impl/squeeze.cpp",
         "impl/expand.cpp"
     ],
     deps = [

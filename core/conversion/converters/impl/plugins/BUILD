@@ -11,11 +11,14 @@ cc_library(
     name = "plugins",
     hdrs = [
         "interpolate_plugin.h",
-        "adaptive_max_pool2d_plugin.h"
+        "adaptive_max_pool2d_plugin.h",
+        "normalize_plugin.h"
     ],
     srcs = [
         "interpolate_plugin.cpp",
-        "adaptive_max_pool2d_plugin.cpp"
+        "adaptive_max_pool2d_plugin.cpp",
+        "normalize_plugin.cpp"
+        
     ],
     deps = [
         "@tensorrt//:nvinfer",
@@ -39,5 +42,6 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 pkg_tar(
     name = "include",
     package_dir = "core/conversion/converters/impl/plugins",
-    srcs = ["interpolate_plugin.h"],
+    srcs = ["interpolate_plugin.h",
+            "normalize_plugin.h"],
 )
