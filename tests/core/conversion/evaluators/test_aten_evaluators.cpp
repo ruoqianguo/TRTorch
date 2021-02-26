@@ -88,3 +88,36 @@ TEST(Evaluators, DivFloatEvaluatesCorrectly) {
 
   ASSERT_TRUE(jit_results[0] == trt_results[0]);
 }
+
+TEST(Evaluators, ATenArangeIntEvaluatesCorrectly) {
+  const auto graph = R"IR(
+      graph():
+        %0 : int = prim::Constant[value=51]()
+        %1 : None = prim::Constant()
+        %2 : Tensor = aten::arange(%0, %1, %1, %1, %1)
+        return (%2))IR";
+
+  auto g = std::make_shared<torch::jit::Graph>();
+  torch::jit::parseIR(graph, &*g);
+
+  auto jit_results = trtorch::tests::util::EvaluateGraphJIT(g, {});
+  auto trt_results = trtorch::tests::util::EvaluateGraph(g->block(), {});
+
+  ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0].toTensor(), trt_results[0].toTensor(), 2e-6));
+}
+
+TEST(Evaluators, ATenArangeFloatEvaluatesCorrectly) {
+  const auto graph = R"IR(
+      graph():
+        %0 : float = prim::Constant[value=51.2]()
+        %1 : None = prim::Constant()
+        %2 : Tensor = aten::arange(%0, %1, %1, %1, %1)
+        return (%2))IR";
+
+  auto g = std::make_shared<torch::jit::Graph>();
+  torch::jit::parseIR(graph, &*g);
+
+  auto jit_results = trtorch::tests::util::EvaluateGraphJIT(g, {});
+  auto trt_results = trtorch::tests::util::EvaluateGraph(g->block(), {});
+  ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0].toTensor(), trt_results[0].toTensor(), 2e-6));
+}

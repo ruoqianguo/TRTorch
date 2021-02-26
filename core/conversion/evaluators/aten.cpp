@@ -496,6 +496,20 @@ auto aten_registrations TRTORCH_UNUSED =
                     },
                     EvalOptions().validSchemas({
                         "aten::Int.Tensor(Tensor a) -> (int)",
+                    })})
+        .evaluator({c10::Symbol::fromQualString("aten::arange"),
+                    [](const torch::jit::Node* n, kwargs& args) -> c10::optional<torch::jit::IValue> {
+                      int end_scalar = 0;
+                      if (args.at(n->input(0)).IValue()->isInt()) {
+                        end_scalar = args.at(n->input(0)).unwrapToInt();
+                      } else if (args.at(n->input(0)).IValue()->isDouble()) {
+                        end_scalar = ceil(args.at(n->input(0)).unwrapToScalar().to<float>());
+                      }
+                      return torch::arange(end_scalar);
+                    },
+                    EvalOptions().validSchemas({
+                        R"SIG(aten::arange(Scalar end, *, int? dtype=None, int? layout=None,
+                            Device? device=None, bool? pin_memory=None) -> (Tensor))SIG",
                     })});
 } // namespace
 } // namespace evaluators
