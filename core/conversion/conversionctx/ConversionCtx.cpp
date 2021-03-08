@@ -1,5 +1,9 @@
 #include <iostream>
 #include <sstream>
+
+#include "NvInferPlugin.h"
+#include "NvInferPluginUtils.h"
+
 #include <utility>
 
 #include "core/conversion/conversionctx/ConversionCtx.h"
@@ -12,6 +16,7 @@ namespace conversion {
 std::ostream& operator<<(std::ostream& os, const BuilderSettings& s) {
     os << "Settings requested for TensorRT engine:"                                        \
        << "\n    Operating Precision: " << s.op_precision                                  \
+       << "\n    TF32 Floating Point Computation Enabled: " << !s.disable_tf32             \
        << "\n    Make Refittable Engine: " << s.refit                                      \
        << "\n    Debuggable Engine: " << s.debug                                           \
        << "\n    Strict Types: " << s.strict_types                                         \
@@ -45,6 +50,22 @@ ConversionCtx::ConversionCtx(BuilderSettings build_settings)
           "[TRTorch Conversion Context] - ",
           util::logging::get_logger().get_reportable_severity(),
           util::logging::get_logger().get_is_colored_output_on()) {
+  // Get list of all available plugin creators
+
+  initLibNvInferPlugins(&logger, "");
+
+  int numCreators = 0;
+  auto tmpList = getPluginRegistry()->getPluginCreatorList(&numCreators);
+  for (int k = 0; k < numCreators; ++k) {
+    if (!tmpList[k]) {
+      continue;
+    }
+    std::string pluginName = tmpList[k]->getPluginName();
+    mPluginRegistry[pluginName] = tmpList[k];
+    LOG_DEBUG("Register plugin: " << pluginName);
+  }
+  LOG_DEBUG("Number of plugin: " << mPluginRegistry.size());
+
   // TODO: Support FP16 and FP32 from JIT information
   builder = nvinfer1::createInferBuilder(logger);
   net = builder->createNetworkV2(1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH));
@@ -54,12 +75,12 @@ ConversionCtx::ConversionCtx(BuilderSettings build_settings)
 
   switch (settings.op_precision) {
     case nvinfer1::DataType::kHALF:
-      TRTORCH_CHECK(builder->platformHasFastFp16(), "Requested inference in FP16 but platform does support FP16");
+      TRTORCH_CHECK(builder->platformHasFastFp16(), "Requested inference in FP16 but platform does not support FP16");
       cfg->setFlag(nvinfer1::BuilderFlag::kFP16);
       input_type = nvinfer1::DataType::kHALF;
       break;
     case nvinfer1::DataType::kINT8:
-      TRTORCH_CHECK(builder->platformHasFastInt8(), "Requested inference in INT8 but platform does support INT8");
+      TRTORCH_CHECK(builder->platformHasFastInt8(), "Requested inference in INT8 but platform does not support INT8");
       cfg->setFlag(nvinfer1::BuilderFlag::kINT8);
       if (!settings.strict_types) {
         cfg->setFlag(nvinfer1::BuilderFlag::kFP16);
@@ -76,6 +97,10 @@ ConversionCtx::ConversionCtx(BuilderSettings build_settings)
       break;
   }
   op_precision = settings.op_precision;
+
+  if (settings.disable_tf32) {
+    cfg->clearFlag(nvinfer1::BuilderFlag::kTF32);
+  }
 
   if (settings.refit) {
     cfg->setFlag(nvinfer1::BuilderFlag::kREFIT);

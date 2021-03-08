@@ -152,7 +152,33 @@ auto acthardtanh TRTORCH_UNUSED =
                     out_tensor = ctx->AssociateValueAndTensor(n->outputs()[0], out_tensor);
                     LOG_DEBUG("Output shape: " << out_tensor->getDimensions());
                     return true;
-                  }});
+                  }})
+        .pattern(
+            {"aten::gelu(Tensor self) -> (Tensor)",
+             [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
+               auto in = args[0].ITensorOrFreeze(ctx);
+               nvinfer1::DataType type = in->getType();
+               TRTORCH_CHECK(
+                   type == nvinfer1::DataType::kFLOAT || type == nvinfer1::DataType::kHALF,
+                   "gelu only supports kFLOAT and kHALF");
+               std::string pluginName = "CustomGeluPluginDynamic";
+               nvinfer1::PluginFieldCollection fc;
+               std::vector<nvinfer1::PluginField> f;
+               int type_id = 0; // Integer encoding the DataType (0: FP32, 1: FP16)
+               if (type == nvinfer1::DataType::kHALF)
+                 type_id = 1;
+               f.emplace_back(nvinfer1::PluginField("type_id", &type_id, nvinfer1::PluginFieldType::kINT32, 1));
+               fc.nbFields = f.size();
+               fc.fields = f.data();
+               nvinfer1::IPluginV2* pluginV2 = ctx->mPluginRegistry.at(pluginName)->createPlugin("gelu", &fc);
+               TRTORCH_CHECK(pluginV2, "Unable to create gelu plugin from TensorRT plugin registry" << *n);
+               auto new_layer = ctx->net->addPluginV2(reinterpret_cast<nvinfer1::ITensor* const*>(&in), 1, *pluginV2);
+               new_layer->setName(util::node_info(n).c_str());
+               auto out_tensor = new_layer->getOutput(0);
+               out_tensor = ctx->AssociateValueAndTensor(n->outputs()[0], out_tensor);
+               LOG_DEBUG("Output shape: " << out_tensor->getDimensions());
+               return true;
+             }});
 
 } // namespace
 } // namespace impl

@@ -24,6 +24,7 @@ struct Device {
 
 struct BuilderSettings {
   nvinfer1::DataType op_precision = nvinfer1::DataType::kFLOAT;
+  bool disable_tf32 = false;
   bool refit = false;
   bool debug = false;
   bool strict_types = false;
@@ -65,6 +66,9 @@ struct ConversionCtx {
   // is constructed from a PyTorch Tensor it allocates the data here to store a
   // copy of the values
   std::vector<void*> builder_resources;
+
+  // Registry of official tensorrt plugin layers.
+  std::unordered_map<std::string, nvinfer1::IPluginCreator*> mPluginRegistry;
 
   std::unordered_map<const torch::jit::Value*, nvinfer1::ITensor*> value_tensor_map;
   std::unordered_map<const torch::jit::Value*, torch::jit::IValue> evaluated_value_map;

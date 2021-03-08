@@ -119,7 +119,7 @@ auto aten_registrations TRTORCH_UNUSED =
                     // Device? device=None, bool? pin_memory=None) -> (Tensor)
                     [](const torch::jit::Node* n, kwargs& args) -> c10::optional<torch::jit::IValue> {
                       auto options = torch::TensorOptions()
-                                         .dtype(c10::ScalarType(args.at(n->output(1)).unwrapToInt()))
+                                         .dtype(c10::ScalarType(args.at(n->input(1)).unwrapToInt()))
                                          .layout(torch::kStrided)
                                          .device(torch::kCUDA);
 
