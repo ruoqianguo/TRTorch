@@ -142,7 +142,7 @@ TEST(Converters, ModelTestCorrectly) {
   torch::jit::Module mod;
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
-    mod = torch::jit::load(path_trt);
+    mod = torch::jit::load(path);
   } catch (const c10::Error& e) {
     std::cerr << "error loading the model\n";
   }
@@ -159,7 +159,7 @@ TEST(Converters, ModelTestCorrectly) {
   // }
 
   // nvtxRangePushA("ComplieGraph");
-  // auto trt_mod = trtorch::CompileGraph(mod, std::vector<trtorch::CompileSpec::InputRange>{in0.sizes()});
+  auto trt_mod = trtorch::CompileGraph(mod, std::vector<trtorch::CompileSpec::InputRange>{in0.sizes()});
   // trt_mod.save(path_trt);
   // nvtxRangePop();
   // std::cout << "trtorch::CompileGraph" << std::endl;
@@ -192,7 +192,7 @@ TEST(Converters, ModelTestCorrectly) {
 
 
   // nvtxRangePushA("mod.forward");
-  // auto out = mod.forward(inputs_);
+  auto out = mod.forward(inputs_);
   // nvtxRangePop();
   // std::cout << "mod forward" << std::endl;
   auto trt_out = mod.forward(inputs_);
@@ -219,7 +219,7 @@ TEST(Converters, ModelTestCorrectly) {
   // auto trt_mod = trtorch::CompileGraph(mod, input_shapes);
   // auto trt_out = trtorch::tests::util::RunModuleForward(trt_mod, trt1_inputs_ivalues);
 
-  // ASSERT_TRUE(trtorch::tests::util::almostEqual(out.toTensor(), trt_out.toTensor(), 1e-2));
+  ASSERT_TRUE(trtorch::tests::util::almostEqual(out.toTensor(), trt_out.toTensor(), 1e-2));
   // ASSERT_TRUE(trtorch::tests::util::almostEqual(out.toTuple()->elements()[0].toTensor(), trt_out.toTuple()->elements()[0].toTensor(), 1e-2));
 
   // ASSERT_TRUE(trtorch::tests::util::almostEqual(
