@@ -68,7 +68,9 @@ auto select_registrations TRTORCH_UNUSED =
         .pattern({"aten::select.int(Tensor(a) self, int dim, int index) -> (Tensor(a))",
                   [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
                     auto in = args[0].ITensor();
+                    auto maxDim = static_cast<int64_t>(in->getDimensions().nbDims);
                     auto axis = args[1].unwrapToInt();
+                    axis = axis < 0 ? axis + maxDim : axis;
                     auto ind = (int32_t)args[2].unwrapToInt();
 
                     // index to access needs to be an at::Tensor
@@ -85,11 +87,12 @@ auto select_registrations TRTORCH_UNUSED =
                     auto gather_layer = ctx->net->addGather(*in, *const_out, axis);
                     TRTORCH_CHECK(gather_layer, "Unable to create gather layer from node: " << *n);
                     auto gather_out = gather_layer->getOutput(0);
+                    LOG_DEBUG("gather_out size " << gather_out->getDimensions() << ", axis "<< axis);
 
                     // IShuffleLayer removes redundant dimensions
                     auto shuffle_layer = ctx->net->addShuffle(*gather_out);
                     TRTORCH_CHECK(shuffle_layer, "Unable to create shuffle layer from node: " << *n);
-                    shuffle_layer->setReshapeDimensions(util::unpadDims(gather_out->getDimensions()));
+                    shuffle_layer->setReshapeDimensions(util::squeezeDims(gather_out->getDimensions(), axis));
                     shuffle_layer->setName(util::node_info(n).c_str());
                     auto shuffle_out = shuffle_layer->getOutput(0);
 
@@ -176,7 +179,10 @@ auto select_registrations TRTORCH_UNUSED =
                auto embeddingTensor = args[0].ITensorOrFreeze(ctx);
                auto indicesTensor = args[1].isITensor() ?  args[1].ITensor() : tensor_to_const(ctx, args[1].IValue()->toTensor().to(torch::kI32));
                // Set datatype for indices tensor to INT32
-               indicesTensor->setType(nvinfer1::DataType::kINT32);
+              //  indicesTensor->setType(nvinfer1::DataType::kINT32);
+              auto identity = ctx->net->addIdentity(*indicesTensor);
+              identity->setOutputType(0, nvinfer1::DataType::kINT32);
+              indicesTensor = identity->getOutput(0);
 
                // IGatherLayer takes in input tensor, the indices, and the axis of input tensor to take indices from
                auto gather_layer = ctx->net->addGather(*embeddingTensor, *indicesTensor, 0);

@@ -13,18 +13,20 @@
 
 TEST(Converters, ModelTestCorrectly) {
   // Done 1 input
-  //   std::string path =
-  //       "/home/vincentzh/Projects/ByteDanceModel/model/vc_dolly_grou_heyi/dolly.feature.blaid_heyi_22/dolly.feature.blaid.zip";
-  //   torch::Tensor in0 = torch::randn({64, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
+    // std::string path =
+    //     "/home/ryan/work/data/TRTModel/dolly.feature.blaid.zip";
+    // std::string path_trt =
+    //     "/home/ryan/work/data/TRTModel/dolly.feature.blaid_trt.zip";
+    // torch::Tensor in0 = torch::randn({64, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
   //   torch::Tensor in1 = torch::randn({64, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
 
-  // Done 1 input
-    std::string path =
-    "/home/ryan/work/data/TRTModel/dolly.feature.moco_603277_luoyuchu_19/moco_64_quan.zip";
-    std::string path_trt =
-    "/home/ryan/work/data/TRTModel/dolly.feature.moco_603277_luoyuchu_19/moco_64_quan_trt.zip";
-    torch::Tensor in0 = torch::randn({1, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
-    // torch::Tensor in1 = torch::randn({1, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
+  // // Done 1 input
+  //   std::string path =
+  //   "/home/ryan/work/data/TRTModel/dolly.feature.moco_603277_luoyuchu_19/moco_64_quan.zip";
+  //   std::string path_trt =
+  //   "/home/ryan/work/data/TRTModel/dolly.feature.moco_603277_luoyuchu_19/moco_64_quan_trt.zip";
+  //   torch::Tensor in0 = torch::randn({1, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
+  //   // torch::Tensor in1 = torch::randn({1, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
 
   // Done 1 input
   //   std::string path =
@@ -67,18 +69,32 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in0 = torch::randn({1, 48, 224, 224}, torch::kCUDA).to(torch::kFloat); 
   // torch::Tensor in1 = torch::randn({1, 300,  128}, torch::kCUDA).to(torch::kFloat);
 
-  // 9 input
+  // 9 input done1 done2
   // std::string path =
   // "/home/ryan/work/data/TRTModel/end2end_models_douyin_first_review_v3_offline_zhangxuan.x_33/douyin_first_review_model_fp32.pt.zip";
-  // torch::Tensor in0 = torch::randn({8, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in1 = torch::randn({8, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in2 = torch::randn({8, 64}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in3 = torch::randn({8, 64}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in4 = torch::randn({8, 64}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in5 = torch::randn({8, 128}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in6 = torch::randn({8, 128}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in7 = torch::randn({8, 128}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in8 = torch::randn({8, 52}, torch::kCUDA).to(torch::kFloat);
+  // std::string path =
+  // "/home/ryan/work/data/TRTModel/end2end_models_douyin_first_review_v3_wangke.88_7/douyin_first_review_model_fp32.pt.zip";
+  // torch::Tensor in0 = torch::randint(0, 255, {8, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in1 = torch::randint(0, 255, {8, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in2 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in3 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in4 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in5 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in6 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in7 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  // // torch::Tensor in8 = torch::randint(1, 2, {8, 52}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in8 = torch::randint(1, 2, {8, 61}, torch::kCUDA).to(torch::kFloat);
+
+  // torch::Tensor in0_ = in0.clone().to(torch::kFloat);
+  // torch::Tensor in1_ = in1.clone().to(torch::kFloat);
+  // torch::Tensor in2_ = in2.clone().to(torch::kI64);
+  // torch::Tensor in3_ = in3.clone().to(torch::kI64);
+  // torch::Tensor in4_ = in4.clone().to(torch::kI64);
+  // torch::Tensor in5_ = in5.clone().to(torch::kI64);
+  // torch::Tensor in6_ = in6.clone().to(torch::kI64);
+  // torch::Tensor in7_ = in7.clone().to(torch::kI64);
+  // torch::Tensor in8_ = in8.clone().to(torch::kI64);
+
 
   // 9 input
   // std::string path =
@@ -97,15 +113,23 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in8 = torch::randn({8, 61}, torch::kCUDA).to(torch::kLong);
 
   // 7 input
-  // std::string path =
-  //     "/home/vincentzh/Projects/ByteDanceModel/model/0202_new_high_dau/end2end_models_douyin_report_v3_user_verify_service_24/douyin_report_model_fp32.pt.zip";
-  // torch::Tensor in0 = torch::randn({128, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in1 = torch::randn({128, 64}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in2 = torch::randn({128, 64}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in3 = torch::randn({128, 64}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in4 = torch::randn({128, 128}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in5 = torch::randn({128, 128}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in6 = torch::randn({128, 128}, torch::kCUDA).to(torch::kFloat);
+  std::string path =
+  "/home/ryan/work/data/TRTModel/end2end_models_douyin_report_v3_user_verify_service_24/douyin_report_model_fp32.pt.zip";
+  torch::Tensor in0 = torch::randint(0, 255, {8, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
+  torch::Tensor in1 = torch::randint(0, 1, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  torch::Tensor in2 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  torch::Tensor in3 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  torch::Tensor in4 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  torch::Tensor in5 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  torch::Tensor in6 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+
+  torch::Tensor in0_ = in0.clone().to(torch::kFloat);
+  torch::Tensor in1_ = in1.clone().to(torch::kI64);
+  torch::Tensor in2_ = in2.clone().to(torch::kI64);
+  torch::Tensor in3_ = in3.clone().to(torch::kI64);
+  torch::Tensor in4_ = in4.clone().to(torch::kI64);
+  torch::Tensor in5_ = in5.clone().to(torch::kI64);
+  torch::Tensor in6_ = in6.clone().to(torch::kI64);
 
   // std::string path =
   // "/home/vincentzh/Projects/ByteDanceModel/model/vc_dolly_grou_heyi/labvc.dungeon.searchnet_liuyongchao.eric_1/labvc.dungeon.searchnet.pt";
@@ -126,18 +150,26 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in3 = torch::randint(0, 4, {128, 203}, torch::kCUDA).to(torch::kInt32);
 
   std::vector<at::Tensor> inputs;
-  // std::vector<at::Tensor> inputs_trt;
-  inputs.push_back(in0);
-  // inputs.push_back(in1);
-  // inputs_trt.push_back(in0);
-  // inputs_trt.push_back(in1);
-  // inputs.push_back(in2);
-  // inputs.push_back(in3);
-  // inputs.push_back(in4);
-  // inputs.push_back(in5);
-  // inputs.push_back(in6);
-  // inputs.push_back(in7);
-  // inputs.push_back(in8);
+  std::vector<at::Tensor> inputs_trt;
+  inputs_trt.push_back(in0);
+  inputs_trt.push_back(in1);
+  inputs_trt.push_back(in2);
+  inputs_trt.push_back(in3);
+  inputs_trt.push_back(in4);
+  inputs_trt.push_back(in5);
+  inputs_trt.push_back(in6);
+  // inputs_trt.push_back(in7);
+  // inputs_trt.push_back(in8);
+
+  inputs.push_back(in0_);
+  inputs.push_back(in1_);
+  inputs.push_back(in2_);
+  inputs.push_back(in3_);
+  inputs.push_back(in4_);
+  inputs.push_back(in5_);
+  inputs.push_back(in6_);
+  // inputs.push_back(in7_);
+  // inputs.push_back(in8_);
 
   torch::jit::Module mod;
   try {
@@ -150,27 +182,28 @@ TEST(Converters, ModelTestCorrectly) {
   mod.to(torch::kCUDA);
 
   std::vector<torch::jit::IValue> inputs_;
-  // std::vector<torch::jit::IValue> inputs_trt_;
+  std::vector<torch::jit::IValue> inputs_trt_;
   for (auto in : inputs) {
     inputs_.push_back(torch::jit::IValue(in.clone()));
   }
-  // for (auto in : inputs_trt) {
-  //   inputs_trt_.push_back(torch::jit::IValue(in.clone()));
-  // }
+  for (auto in : inputs_trt) {
+    inputs_trt_.push_back(torch::jit::IValue(in.clone()));
+  }
 
   // nvtxRangePushA("ComplieGraph");
-  auto trt_mod = trtorch::CompileGraph(mod, std::vector<trtorch::CompileSpec::InputRange>{in0.sizes()});
+  // auto trt_mod = trtorch::CompileGraph(mod, std::vector<trtorch::CompileSpec::InputRange>{in0.sizes()});
   // trt_mod.save(path_trt);
   // nvtxRangePop();
   // std::cout << "trtorch::CompileGraph" << std::endl;
   // auto trt_mod = trtorch::CompileGraph(mod, std::vector<trtorch::CompileSpec::InputRange>{in0.sizes(),
   //   in1.sizes(), in2.sizes(), in3.sizes(), in4.sizes(), in5.sizes(), in6.sizes(), in7.sizes(), in8.sizes()});
-
-  // auto trt_mod = trtorch::CompileGraph(
-  //     mod,
-  //     std::vector<trtorch::CompileSpec::InputRange>{
-  //         in0.sizes(), in1.sizes(), in2.sizes(), in3.sizes(), in4.sizes(), in5.sizes(), in6.sizes()});
-
+  // std::cout << "trtorch::CompileGraph" << std::endl;
+  auto trt_mod = trtorch::CompileGraph(
+      mod,
+      std::vector<trtorch::CompileSpec::InputRange>{
+          in0.sizes(), in1.sizes(), in2.sizes(), in3.sizes(), in4.sizes(), in5.sizes(), in6.sizes()});
+  std::cout << "trtorch::CompileGraph" << std::endl;
+  
   // clock_t start_time, end_time;
   // start_time = clock();
   // for (int i = 0; i < 10; i++) {
@@ -194,9 +227,9 @@ TEST(Converters, ModelTestCorrectly) {
   // nvtxRangePushA("mod.forward");
   auto out = mod.forward(inputs_);
   // nvtxRangePop();
-  // std::cout << "mod forward" << std::endl;
-  auto trt_out = mod.forward(inputs_);
-  // std::cout << "trt_mod forward" << std::endl;
+  std::cout << "mod forward" << std::endl;
+  auto trt_out = trt_mod.forward(inputs_trt_);
+  std::cout << "trt_mod forward" << std::endl;
 
   // const std::vector<std::vector<int64_t>> input_shapes = {{1, 1, 64, 64}};
   // std::vector<torch::jit::IValue> jit1_inputs_ivalues;

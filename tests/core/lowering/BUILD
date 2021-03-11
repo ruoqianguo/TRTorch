@@ -12,7 +12,7 @@ lowering_test(
 )
 
 lowering_test(
-  name = "test_remove_to",
+  name = "test_reduce_to_pass",
 )
 
 lowering_test(
@@ -23,7 +23,7 @@ test_suite(
     name = "lowering_tests",
     tests = [
         ":test_remove_contiguous_pass",
-        ":test_remove_to",
+        ":test_reduce_to_pass",
         ":test_remove_detach_pass"
     ]
 )
