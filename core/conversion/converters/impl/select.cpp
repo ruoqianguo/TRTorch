@@ -18,7 +18,7 @@ bool add_split(ConversionCtx* ctx, const torch::jit::Node* n, args& args, bool s
   auto in = args[0].ITensor();
   auto axis = args[2].unwrapToInt();
   auto inDimSize = in->getDimensions().d[axis];
-  auto numOutputs = 1;
+  auto numOutputs = 1, numRemainder = 0;
   std::vector<int64_t> sizes;
 
   if (split_list) {
@@ -27,10 +27,13 @@ bool add_split(ConversionCtx* ctx, const torch::jit::Node* n, args& args, bool s
   } else {
     auto split_size = args[1].unwrapToInt();
     numOutputs = inDimSize / split_size;
-    if (numOutputs == 1) {
+    numRemainder = inDimSize % split_size;
+    for(int i=0;i<numOutputs;i++){
       sizes.push_back(split_size);
-    } else {
-      sizes = std::vector<int64_t>(numOutputs, 1);
+    }
+    if(numRemainder){
+      numOutputs += 1;
+      sizes.push_back(numRemainder);
     }
   }
 
@@ -177,7 +180,7 @@ auto select_registrations TRTORCH_UNUSED =
             {"aten::embedding(Tensor weight, Tensor indices, int padding_idx=-1, bool scale_grad_by_freq=False, bool sparse=False) -> (Tensor)",
              [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
                auto embeddingTensor = args[0].ITensorOrFreeze(ctx);
-               auto indicesTensor = args[1].isITensor() ?  args[1].ITensor() : tensor_to_const(ctx, args[1].IValue()->toTensor().to(torch::kI32));
+               auto indicesTensor = args[1].ITensorOrFreeze(ctx);
                // Set datatype for indices tensor to INT32
               //  indicesTensor->setType(nvinfer1::DataType::kINT32);
               auto identity = ctx->net->addIdentity(*indicesTensor);

@@ -1,5 +1,6 @@
 #include <torch/torch.h>
 #include "core/conversion/converters/converters.h"
+#include "core/conversion/tensorcontainer/TensorContainer.h"
 #include "core/util/prelude.h"
 
 namespace trtorch {
@@ -534,9 +535,11 @@ auto element_wise_registrations TRTORCH_UNUSED =
         .pattern({"aten::ne.Scalar(Tensor self, Scalar other) -> (Tensor)",
                   [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
                     auto self = args[0].ITensorOrFreeze(ctx);
-                    self->setType(nvinfer1::DataType::kINT32);
-                    auto scalar = args[1].unwrapToScalar().to<int32_t>();
-                    auto scalar_tensor = tensor_to_const(ctx, torch::tensor({scalar}, torch::kInt32));
+                    // self->setType(nvinfer1::DataType::kINT32);
+                    // auto scalar = args[1].unwrapToScalar().to<int32_t>();
+                    // auto scalar_tensor = tensor_to_const(ctx, torch::tensor({scalar}, torch::kInt32));
+                    auto scalar = args[1].unwrapToScalar().to<float>();
+                    auto scalar_tensor = tensor_to_const(ctx, torch::tensor({scalar}));
                     auto equal = add_elementwise(
                         ctx,
                         nvinfer1::ElementWiseOperation::kEQUAL,
@@ -561,9 +564,11 @@ auto element_wise_registrations TRTORCH_UNUSED =
 
                     sub->setName(util::node_info(n).c_str());
 
-                    auto output_cast = ctx->net->addIdentity(*sub->getOutput(0));
-                    output_cast->setOutputType(0, nvinfer1::DataType::kINT32);
-                    auto out = ctx->AssociateValueAndTensor(n->outputs()[0], output_cast->getOutput(0));
+                    // auto output_cast = ctx->net->addIdentity(*sub->getOutput(0));
+                    // output_cast->setOutputType(0, nvinfer1::DataType::kINT32);
+                    // auto out = ctx->AssociateValueAndTensor(n->outputs()[0], output_cast->getOutput(0));
+                    
+                    auto out = ctx->AssociateValueAndTensor(n->outputs()[0], sub->getOutput(0));
                     
                     LOG_DEBUG("Not equal layer output tensor shape: " << out->getDimensions());
                     return true;

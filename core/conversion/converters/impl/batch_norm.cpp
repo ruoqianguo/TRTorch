@@ -44,7 +44,7 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
       auto should_unpack = util::toVec(orig_shape).size() < 4;
       if (should_unpack) {
         // expand spatial dims from 1D to 2D
-        auto new_shape = util::toDimsPad(util::toVec(orig_shape), 4);
+        auto new_shape = util::toDimsPadAtEnd(util::toVec(orig_shape), 4);
         LOG_DEBUG(
             "Input shape is less than 4D got: "
             << orig_shape << ", inserting shuffle layer to reshape to 4D tensor shape: " << new_shape);
@@ -55,12 +55,14 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
       }
 
       auto scale = gamma / torch::sqrt(var + eps);
+      
       auto bias = beta - mean * scale;
 
       auto scale_weights = Weights(ctx, scale);
       auto bias_weights = Weights(ctx, bias);
 
       auto power = Weights(ctx, at::ones_like(scale));
+
       auto bn = ctx->net->addScaleNd(
           *input, nvinfer1::ScaleMode::kCHANNEL, bias_weights.data, scale_weights.data, power.data, 1);
       bn->setName(util::node_info(n).c_str());
@@ -82,29 +84,31 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
     [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
       auto input = args[0].ITensor(); // assumes non-static input Tensor
       auto tensor_type = util::toATenDType(input->getType());
+      tensor_type = torch::kFloat;
       auto options = torch::TensorOptions().dtype(tensor_type);
       auto normalized_shape = args[1].unwrapToIntList().vec();
-      auto weight = args[2].isITensor() ? args[2].ITensor() : 
-                            tensor_to_const(ctx, at::full({normalized_shape}, 1, {options}));
-      auto bias = args[3].isITensor() ? args[3].ITensor() : 
-                             tensor_to_const(ctx, at::full({normalized_shape}, 0, {options})); 
+      nvinfer1::ITensor *weight, *bias;
+      
+      if(args[2].isITensor()){
+        weight = args[2].ITensor();
+      }else if(args[2].isIValue()){
+        weight = tensor_to_const(ctx, args[2].IValue()->toTensor());
+      }else{
+        weight = tensor_to_const(ctx, at::full({normalized_shape}, 1, {options}));
+      }
+
+      if(args[3].isITensor()){
+        bias = args[3].ITensor();
+      }else if(args[3].isIValue()){
+        bias = tensor_to_const(ctx, args[3].IValue()->toTensor());
+      }else{
+        bias = tensor_to_const(ctx, at::full({normalized_shape}, 0, {options}));
+      }
+
       auto eps = args[4].unwrapToDouble(1e-5f);
       auto orig_shape = input->getDimensions();
       auto shape = util::toVec(orig_shape);
 
-      // auto should_unpack = util::toVec(orig_shape).size() < 4;
-    
-      // if (should_unpack) {
-      //   // expand spatial dims from 1D to 2D
-      //   auto new_shape = util::toDimsPad(util::toVec(orig_shape), 4);
-      //   LOG_DEBUG(
-      //       "Input shape is less than 4D got: "
-      //       << orig_shape << ", inserting shuffle layer to reshape to 4D tensor shape: " << new_shape);
-      //   auto in_shuffle = ctx->net->addShuffle(*input);
-      //   in_shuffle->setReshapeDimensions(new_shape);
-      //   in_shuffle->setName(std::string("[Reshape input to " + util::toStr(new_shape) + ']').c_str());
-      //   input = in_shuffle->getOutput(0);
-      // }
       auto creator = new plugins::LayerNormPluginCreator();
       auto plugin = creator->createPlugin(
           "LayerNorm",

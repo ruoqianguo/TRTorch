@@ -55,6 +55,35 @@ auto cast_registrations TRTORCH_UNUSED =
                }
                TRTORCH_CHECK(is_datatype_supported, "Conversion to desired datatype is not supported");
                return register_cast_layer(ctx, n, self, other_dtype);
+             }})
+        .pattern(
+            {"aten::to.dtype_layout(Tensor self, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None, bool non_blocking=False, bool copy=False, MemoryFormat? memory_format=None) -> (Tensor)",
+             [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
+               auto self = args[0].ITensorOrFreeze(ctx);
+               auto output_dtype = args[1].unwrapToScalar().to<int64_t>();
+               if(output_dtype == 4)
+                output_dtype = 3;
+               auto aten_to_trt_dtype_map = util::get_aten_trt_type_map();
+               TRTORCH_CHECK(
+                   aten_to_trt_dtype_map.find(static_cast<at::ScalarType>(output_dtype)) != aten_to_trt_dtype_map.end(),
+                   "Conversion to desired datatype is not supported");
+               return register_cast_layer(
+                   ctx, n, self, aten_to_trt_dtype_map.at(static_cast<at::ScalarType>(output_dtype)));
+             }})
+             
+        .pattern(
+            {"aten::to.dtype(Tensor self, ScalarType dtype, bool non_blocking=False, bool copy=False, MemoryFormat? memory_format=None) -> (Tensor)",
+             [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
+               auto self = args[0].ITensorOrFreeze(ctx);
+               auto output_dtype = args[1].unwrapToScalar().to<int64_t>();
+               if(output_dtype == 4)
+                output_dtype = 3;
+               auto aten_to_trt_dtype_map = util::get_aten_trt_type_map();
+               TRTORCH_CHECK(
+                   aten_to_trt_dtype_map.find(static_cast<at::ScalarType>(output_dtype)) != aten_to_trt_dtype_map.end(),
+                   "Conversion to desired datatype is not supported");
+               return register_cast_layer(
+                   ctx, n, self, aten_to_trt_dtype_map.at(static_cast<at::ScalarType>(output_dtype)));
              }});
 // clang-format on
 } // namespace
