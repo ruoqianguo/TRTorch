@@ -25,7 +25,6 @@ namespace plugins {
 
 class LayerNormPlugin : public nvinfer1::IPluginV2DynamicExt {
  private:
-  at::TensorOptions tensor_options_;
   DataType dtype_;
 
   std::vector<int64_t> normalized_shape_;
@@ -47,12 +46,6 @@ class LayerNormPlugin : public nvinfer1::IPluginV2DynamicExt {
   LayerNormPlugin(const char* data, size_t length);
 
   LayerNormPlugin() = delete;
-
-  //   std::vector<int64_t> getInputShape();
-
-  //   std::vector<int64_t> getOutputShape();
-
-  //   std::vector<int64_t> getOutputSize();
 
   int getNbOutputs() const override;
 

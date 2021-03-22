@@ -55,12 +55,14 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
       }
 
       auto scale = gamma / torch::sqrt(var + eps);
+      
       auto bias = beta - mean * scale;
 
       auto scale_weights = Weights(ctx, scale);
       auto bias_weights = Weights(ctx, bias);
 
       auto power = Weights(ctx, at::ones_like(scale));
+
       auto bn = ctx->net->addScaleNd(
           *input, nvinfer1::ScaleMode::kCHANNEL, bias_weights.data, scale_weights.data, power.data, 1);
       bn->setName(util::node_info(n).c_str());
@@ -82,12 +84,27 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
     [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
       auto input = args[0].ITensor(); // assumes non-static input Tensor
       auto tensor_type = util::toATenDType(input->getType());
+      tensor_type = torch::kFloat;
       auto options = torch::TensorOptions().dtype(tensor_type);
       auto normalized_shape = args[1].unwrapToIntList().vec();
-      auto weight = args[2].isITensor() ? args[2].ITensor() : 
-                            tensor_to_const(ctx, at::full({normalized_shape}, 1, {options}));
-      auto bias = args[3].isITensor() ? args[3].ITensor() : 
-                             tensor_to_const(ctx, at::full({normalized_shape}, 0, {options})); 
+      nvinfer1::ITensor *weight, *bias;
+      
+      if(args[2].isITensor()){
+        weight = args[2].ITensor();
+      }else if(args[2].isIValue() && args[2].IValue()->isTensor()){
+        weight = tensor_to_const(ctx, args[2].IValue()->toTensor());
+      }else{
+        weight = tensor_to_const(ctx, at::full({normalized_shape}, 1, {options}));
+      }
+
+      if(args[3].isITensor()){
+        bias = args[3].ITensor();
+      }else if(args[3].isIValue() && args[3].IValue()->isTensor()){
+        bias = tensor_to_const(ctx, args[3].IValue()->toTensor());
+      }else{
+        bias = tensor_to_const(ctx, at::full({normalized_shape}, 0, {options}));
+      }
+
       auto eps = args[4].unwrapToDouble(1e-5f);
       auto orig_shape = input->getDimensions();
       auto shape = util::toVec(orig_shape);

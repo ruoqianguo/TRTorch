@@ -62,6 +62,7 @@ nvinfer1::DimsExprs LayerNormPlugin::getOutputDimensions(
     int nbInputs,
     nvinfer1::IExprBuilder& exprBuilder) {
   nvinfer1::DimsExprs output(inputs[0]);
+
   return output;
 }
 
@@ -71,15 +72,6 @@ nvinfer1::DataType LayerNormPlugin::getOutputDataType(int index, const nvinfer1:
 }
 
 int LayerNormPlugin::initialize() {
-#if NV_TENSORRT_MAJOR < 7 || (NV_TENSORRT_MAJOR == 7 && NV_TENSORRT_MINOR < 1)
-  tensor_options_ = tensor_options_.device(c10::kCUDA);
-#else
-  tensor_options_ = tensor_options_.device(c10::kCPU);
-#endif
-
-  // c10::kFloat = FLOAT32
-  tensor_options_ = tensor_options_.dtype(c10::kFloat);
-
   return 0;
 }
 
@@ -112,7 +104,7 @@ bool LayerNormPlugin::supportsFormatCombination(
     int nbInputs,
     int nbOutputs) {
   TRTORCH_ASSERT(0 <= pos && pos <= 3, "There should be exactly 4 connections to the plugin - 3 input, 1 output");
-  TRTORCH_ASSERT(nbInputs == 3, "Expected 3 tensors as input to LayerNorm plugin");
+  TRTORCH_ASSERT(nbInputs == 3, "Expected a single tensor as input to LayerNorm plugin");
   TRTORCH_ASSERT(nbOutputs == 1, "Expected a single tensor as output to LayerNorm plugin");
 
   switch (pos)
@@ -158,75 +150,32 @@ int LayerNormPlugin::enqueue(
     void* const* outputs,
     void* workspace,
     cudaStream_t stream) {
-  // #if NV_TENSORRT_MAJOR < 7 || (NV_TENSORRT_MAJOR == 7 && NV_TENSORRT_MINOR < 1)
-  //   at::Tensor input = at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, tensor_options_);
-  //   at::Tensor weight = at::from_blob((void*)inputs[1], util::toVec(inputDesc[1].dims), [](void*) {}, tensor_options_);
-  //   at::Tensor bias = at::from_blob((void*)inputs[2], util::toVec(inputDesc[2].dims), [](void*) {}, tensor_options_);
-  //   at::Tensor output = at::from_blob(outputs[0], util::volume(outputDesc->dims), [](void*) {}, tensor_options_);
+  at::Tensor input= at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
+  at::Tensor weight = at::from_blob((void*)inputs[1], util::toVec(inputDesc[1].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
+  at::Tensor bias = at::from_blob((void*)inputs[2], util::toVec(inputDesc[2].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
+  at::Tensor output = at::from_blob(outputs[0], util::toVec(outputDesc[0].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
 
-  //   at::cuda::CUDAStream torch_stream = at::cuda::getStreamFromPool();
-  //   at::cuda::CUDAStreamGuard torch_guard(torch_stream);
+  at::cuda::CUDAStream torch_stream = at::cuda::getStreamFromPool();
+  at::cuda::CUDAStreamGuard torch_guard(torch_stream);
 
-  //   cudaEvent_t event;
-  //   cudaEventCreate(&event);
-  //   cudaEventRecord(event, stream);
+  cudaEvent_t event;
+  cudaEventCreate(&event);
+  cudaEventRecord(event, stream);
+  cudaStreamWaitEvent(torch_stream.stream(), event, 0);
 
-  //   cudaStreamWaitEvent(torch_stream.stream(), event, 0);
+  at::Tensor output_ = at::layer_norm(input, normalized_shape_, weight, bias, eps_, false);
+  output.copy_(output_);
+  
+  cudaEvent_t torch_event;
+  cudaEventCreate(&torch_event);
+  cudaEventRecord(torch_event, torch_stream.stream());
 
-    
+  cudaStreamWaitEvent(stream, torch_event, 0);
 
-  //   cudaEvent_t torch_event;
-  //   cudaEventCreate(&torch_event);
-  //   cudaEventRecord(torch_event, torch_stream.stream());
+  cudaEventDestroy(event);
+  cudaEventDestroy(torch_event);
 
-  //   cudaStreamWaitEvent(stream, torch_event, 0);
-
-  //   cudaEventDestroy(event);
-  //   cudaEventDestroy(torch_event);
-
-  //   return 0;
-  // #else
-    // TODO: When PyTorch updates to cuDNN 8 try moving back to CUDA based ATen
-    // kernels HACK: WAR because there is a segfault if you try to create a CUDA
-    // Tensor in the context of TensorRT execution.
-    float* input_blob = (float*)malloc(util::volume(inputDesc[0].dims) * sizeof(float));
-    float* weight_blob = (float*)malloc(util::volume(inputDesc[1].dims) * sizeof(float));
-    float* bias_blob = (float*)malloc(util::volume(inputDesc[2].dims) * sizeof(float));
-    cudaMemcpyAsync(
-        input_blob,
-        static_cast<const void*>(inputs[0]),
-        util::volume(inputDesc[0].dims) * sizeof(float),
-        cudaMemcpyDeviceToHost,
-        stream);
-    cudaMemcpyAsync(
-        weight_blob,
-        static_cast<const void*>(inputs[1]),
-        util::volume(inputDesc[1].dims) * sizeof(float),
-        cudaMemcpyDeviceToHost,
-        stream);
-    cudaMemcpyAsync(
-        bias_blob,
-        static_cast<const void*>(inputs[2]),
-        util::volume(inputDesc[2].dims) * sizeof(float),
-        cudaMemcpyDeviceToHost,
-        stream);
-    cudaStreamSynchronize(stream);
-
-    at::Tensor input = at::from_blob((void*)input_blob, util::toVec(inputDesc[0].dims), tensor_options_);
-    at::Tensor weight = at::from_blob((void*)weight_blob, util::toVec(inputDesc[1].dims), tensor_options_);
-    at::Tensor bias = at::from_blob((void*)bias_blob, util::toVec(inputDesc[2].dims), tensor_options_);
-    at::Tensor output;
-
-    output = torch::layer_norm(input, normalized_shape_, weight, bias, eps_);
-
-    cudaMemcpyAsync(
-        outputs[0], output.data_ptr(), util::volume(outputDesc->dims) * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaStreamSynchronize(stream);
-
-    free(input_blob);
-
-    return 0;
-  // #endif
+  return 0;
 }
 
 /*

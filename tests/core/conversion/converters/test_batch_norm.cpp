@@ -2,6 +2,7 @@
 #include "core/compiler.h"
 #include "gtest/gtest.h"
 #include "tests/util/util.h"
+#include "torch/script.h"
 #include "torch/csrc/jit/ir/irparser.h"
 
 TEST(Converters, ATenBatchNormConvertsCorrectly) {
@@ -40,7 +41,7 @@ TEST(Converters, ATenLayerNormConvertsCorrectly) {
       graph(%0 : Tensor,
             %1: Tensor,
             %2: Tensor):
-        %5 : int[] = prim::Constant[value=[5, 5]]()
+        %5 : int[] = prim::Constant[value=[768]]()
         %6 : float = prim::Constant[value=1.0000000000000001e-05]()
         %7 : bool = prim::Constant[value=0]()
         %8 : Tensor = aten::layer_norm(%0, %5, %1, %2, %6, %7)
@@ -49,9 +50,9 @@ TEST(Converters, ATenLayerNormConvertsCorrectly) {
   auto g = std::make_shared<torch::jit::Graph>();
   torch::jit::parseIR(graph, &*g);
 
-  auto in = at::randint(1, 10, {1, 5, 5, 5}, {at::kCUDA});
-  auto weight = at::randint(1, 10, {5, 5}, {at::kCUDA});
-  auto bias = at::randint(1, 10, {5, 5}, {at::kCUDA});
+  auto in = at::randn({8, 256, 768}, {at::kCUDA}).to(torch::kFloat);
+  auto weight = at::randn({768}, {at::kCUDA}).to(torch::kFloat);
+  auto bias = at::randn({768}, {at::kCUDA}).to(torch::kFloat);
 
   auto params = trtorch::core::conversion::get_named_params(g->inputs(), {});
   auto jit_results = trtorch::tests::util::RunGraph(g, params, {in, weight, bias});
@@ -76,8 +77,6 @@ TEST(Converters, ATenLayerNormWeightNoneConvertsCorrectly) {
   torch::jit::parseIR(graph, &*g);
 
   auto in = at::randint(1, 10, {1, 5, 5, 5}, {at::kCUDA});
-  // auto weight = at::randint(1, 10, {5, 5}, {at::kCUDA});
-  // auto bias = at::randint(1, 10, {5, 5}, {at::kCUDA});
 
   auto params = trtorch::core::conversion::get_named_params(g->inputs(), {});
   auto jit_results = trtorch::tests::util::RunGraph(g, params, {in});
