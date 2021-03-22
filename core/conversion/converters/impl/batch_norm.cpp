@@ -91,7 +91,7 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
       
       if(args[2].isITensor()){
         weight = args[2].ITensor();
-      }else if(args[2].isIValue()){
+      }else if(args[2].isIValue() && args[2].IValue()->isTensor()){
         weight = tensor_to_const(ctx, args[2].IValue()->toTensor());
       }else{
         weight = tensor_to_const(ctx, at::full({normalized_shape}, 1, {options}));
@@ -99,7 +99,7 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
 
       if(args[3].isITensor()){
         bias = args[3].ITensor();
-      }else if(args[3].isIValue()){
+      }else if(args[3].isIValue() && args[3].IValue()->isTensor()){
         bias = tensor_to_const(ctx, args[3].IValue()->toTensor());
       }else{
         bias = tensor_to_const(ctx, at::full({normalized_shape}, 0, {options}));

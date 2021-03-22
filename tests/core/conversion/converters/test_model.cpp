@@ -114,23 +114,23 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in8 = torch::randn({8, 61}, torch::kCUDA).to(torch::kLong);
 
   // 7 input done
-  std::string path =
-  "/home/ryan/work/data/TRTModel/end2end_models_douyin_report_v3_user_verify_service_24/douyin_report_model_fp32.pt.zip";
-  torch::Tensor in0 = torch::randint(0, 255, {8, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
-  torch::Tensor in1 = torch::randint(0, 1, {8, 64}, torch::kCUDA).to(torch::kFloat);
-  torch::Tensor in2 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
-  torch::Tensor in3 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
-  torch::Tensor in4 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
-  torch::Tensor in5 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
-  torch::Tensor in6 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  // std::string path =
+  // "/home/ryan/work/data/TRTModel/end2end_models_douyin_report_v3_user_verify_service_24/douyin_report_model_fp32.pt.zip";
+  // torch::Tensor in0 = torch::randint(0, 255, {8, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in1 = torch::randint(0, 1, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in2 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in3 = torch::randint(1, 2, {8, 64}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in4 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in5 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
+  // torch::Tensor in6 = torch::randint(1, 2, {8, 128}, torch::kCUDA).to(torch::kFloat);
 
-  torch::Tensor in0_ = in0.clone().to(torch::kFloat);
-  torch::Tensor in1_ = in1.clone().to(torch::kI64);
-  torch::Tensor in2_ = in2.clone().to(torch::kI64);
-  torch::Tensor in3_ = in3.clone().to(torch::kI64);
-  torch::Tensor in4_ = in4.clone().to(torch::kI64);
-  torch::Tensor in5_ = in5.clone().to(torch::kI64);
-  torch::Tensor in6_ = in6.clone().to(torch::kI64);
+  // torch::Tensor in0_ = in0.clone().to(torch::kFloat);
+  // torch::Tensor in1_ = in1.clone().to(torch::kI64);
+  // torch::Tensor in2_ = in2.clone().to(torch::kI64);
+  // torch::Tensor in3_ = in3.clone().to(torch::kI64);
+  // torch::Tensor in4_ = in4.clone().to(torch::kI64);
+  // torch::Tensor in5_ = in5.clone().to(torch::kI64);
+  // torch::Tensor in6_ = in6.clone().to(torch::kI64);
 
   // std::string path =
   // "/home/vincentzh/Projects/ByteDanceModel/model/vc_dolly_grou_heyi/labvc.dungeon.searchnet_liuyongchao.eric_1/labvc.dungeon.searchnet.pt";
@@ -155,33 +155,34 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in1_ = in1.clone().to(torch::kI64);
 
   // // 2 input done  0.00259606
-  // std::string path = "/home/ryan/work/data/TRTModel/ad_vse_inf_text_60m_128dim_chenjiacheng.cjc_5/vse_inf_text_60m_128dim.pt";
-  // torch::Tensor in0 = torch::randint(1, 2, {8, 256}, torch::kCUDA).to(torch::kFloat);
-  // torch::Tensor in1 = torch::randint(1, 2, {8}, torch::kCUDA).to(torch::kFloat);
+  std::string path = "/home/ryan/work/data/TRTModel/ad_vse_inf_text_60m_128dim_chenjiacheng.cjc_5/vse_inf_text_60m_128dim.zip";
+  std::string path_trt = "/home/ryan/work/data/TRTModel/ad_vse_inf_text_60m_128dim_chenjiacheng.cjc_5/vse_inf_text_60m_128dim_trt.zip";
+  torch::Tensor in0 = torch::randint(1, 2, {8, 256}, torch::kCUDA).to(torch::kFloat);
+  torch::Tensor in1 = torch::randint(1, 2, {8}, torch::kCUDA).to(torch::kFloat);
   
-  // torch::Tensor in0_ = in0.clone().to(torch::kI64);
-  // torch::Tensor in1_ = in1.clone().to(torch::kI64);
+  torch::Tensor in0_ = in0.clone().to(torch::kI64);
+  torch::Tensor in1_ = in1.clone().to(torch::kI64);
 
 
   std::vector<at::Tensor> inputs;
   std::vector<at::Tensor> inputs_trt;
   inputs_trt.push_back(in0);
   inputs_trt.push_back(in1);
-  inputs_trt.push_back(in2);
-  inputs_trt.push_back(in3);
-  inputs_trt.push_back(in4);
-  inputs_trt.push_back(in5);
-  inputs_trt.push_back(in6);
+  // inputs_trt.push_back(in2);
+  // inputs_trt.push_back(in3);
+  // inputs_trt.push_back(in4);
+  // inputs_trt.push_back(in5);
+  // inputs_trt.push_back(in6);
   // inputs_trt.push_back(in7);
   // inputs_trt.push_back(in8);
 
   inputs.push_back(in0_);
   inputs.push_back(in1_);
-  inputs.push_back(in2_);
-  inputs.push_back(in3_);
-  inputs.push_back(in4_);
-  inputs.push_back(in5_);
-  inputs.push_back(in6_);
+  // inputs.push_back(in2_);
+  // inputs.push_back(in3_);
+  // inputs.push_back(in4_);
+  // inputs.push_back(in5_);
+  // inputs.push_back(in6_);
   // inputs.push_back(in7_);
   // inputs.push_back(in8_);
 
@@ -205,22 +206,22 @@ TEST(Converters, ModelTestCorrectly) {
   }
 
   // nvtxRangePushA("ComplieGraph");
-  // auto compile_settings = trtorch::CompileSpec(std::vector<trtorch::CompileSpec::InputRange>{in0.sizes(), in1.sizes()});
+  auto compile_settings = trtorch::CompileSpec(std::vector<trtorch::CompileSpec::InputRange>{in0.sizes(), in1.sizes()});
   // auto compile_settings = trtorch::CompileSpec(std::vector<trtorch::CompileSpec::InputRange>{in0.sizes()});
 // FP16 execution
-  // compile_settings.op_precision = torch::kFloat;
-  // auto trt_mod = trtorch::CompileGraph(mod, compile_settings);
-  // trt_mod.save(path_trt);
+  compile_settings.op_precision = torch::kFloat;
+  auto trt_mod = trtorch::CompileGraph(mod, compile_settings);
+  trt_mod.save(path_trt);
   // nvtxRangePop();
-  // std::cout << "trtorch::CompileGraph" << std::endl;
+  std::cout << "trtorch::CompileGraph" << std::endl;
   // auto trt_mod = trtorch::CompileGraph(mod, std::vector<trtorch::CompileSpec::InputRange>{in0.sizes(),
   //   in1.sizes(), in2.sizes(), in3.sizes(), in4.sizes(), in5.sizes(), in6.sizes(), in7.sizes(), in8.sizes()});
   // std::cout << "trtorch::CompileGraph" << std::endl;
-  auto trt_mod = trtorch::CompileGraph(
-      mod,
-      std::vector<trtorch::CompileSpec::InputRange>{
-          in0.sizes(), in1.sizes(), in2.sizes(), in3.sizes(), in4.sizes(), in5.sizes(), in6.sizes()});
-  std::cout << "trtorch::CompileGraph" << std::endl;
+  // auto trt_mod = trtorch::CompileGraph(
+  //     mod,
+  //     std::vector<trtorch::CompileSpec::InputRange>{
+  //         in0.sizes(), in1.sizes(), in2.sizes(), in3.sizes(), in4.sizes(), in5.sizes(), in6.sizes()});
+  // std::cout << "trtorch::CompileGraph" << std::endl;
 
 
   auto out = mod.forward(inputs_);
