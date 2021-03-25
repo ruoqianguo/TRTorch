@@ -84,7 +84,6 @@ auto batch_norm_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().
     [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
       auto input = args[0].ITensor(); // assumes non-static input Tensor
       auto tensor_type = util::toATenDType(input->getType());
-      tensor_type = torch::kFloat;
       auto options = torch::TensorOptions().dtype(tensor_type);
       auto normalized_shape = args[1].unwrapToIntList().vec();
       nvinfer1::ITensor *weight, *bias;

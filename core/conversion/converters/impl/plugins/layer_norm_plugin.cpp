@@ -62,13 +62,12 @@ nvinfer1::DimsExprs LayerNormPlugin::getOutputDimensions(
     int nbInputs,
     nvinfer1::IExprBuilder& exprBuilder) {
   nvinfer1::DimsExprs output(inputs[0]);
-
   return output;
 }
 
 nvinfer1::DataType LayerNormPlugin::getOutputDataType(int index, const nvinfer1::DataType* inputTypes, int nbInputs)
     const {
-  return DataType::kFLOAT;
+  return inputTypes[0];
 }
 
 int LayerNormPlugin::initialize() {
@@ -111,13 +110,13 @@ bool LayerNormPlugin::supportsFormatCombination(
   {
   case 0:  // input0
     /* code */
-    return inOut[0].type==DataType::kFLOAT && inOut[0].format==PluginFormat::kLINEAR;
+    return (inOut[0].type==DataType::kFLOAT || inOut[0].type==DataType::kHALF) && inOut[0].format==PluginFormat::kLINEAR;
   case 1:  // input1 weight
     /* code */
-    return inOut[1].type==DataType::kFLOAT && inOut[1].format==PluginFormat::kLINEAR;
+    return inOut[1].type==inOut[0].type && inOut[1].format==PluginFormat::kLINEAR;
   case 2:  // input2 bias
     /* code */
-    return inOut[2].type==DataType::kFLOAT && inOut[2].format==PluginFormat::kLINEAR;
+    return inOut[2].type==inOut[0].type && inOut[2].format==PluginFormat::kLINEAR;
   case 3:  // outpu0
     /* code */
     return inOut[3].type==inOut[0].type && inOut[3].format==PluginFormat::kLINEAR;
@@ -132,7 +131,6 @@ void LayerNormPlugin::configurePlugin(
     int nbInputs,
     const nvinfer1::DynamicPluginTensorDesc* out,
     int nbOutputs) {
-  dtype_ = DataType::kFLOAT;
 }
 
 size_t LayerNormPlugin::getWorkspaceSize(
@@ -150,11 +148,11 @@ int LayerNormPlugin::enqueue(
     void* const* outputs,
     void* workspace,
     cudaStream_t stream) {
-  at::Tensor input= at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
-  at::Tensor weight = at::from_blob((void*)inputs[1], util::toVec(inputDesc[1].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
-  at::Tensor bias = at::from_blob((void*)inputs[2], util::toVec(inputDesc[2].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
-  at::Tensor output = at::from_blob(outputs[0], util::toVec(outputDesc[0].dims), [](void*) {}, {at::kCUDA}).to(torch::kFloat);
-
+  auto tensor_type = util::toATenDType(inputDesc[0].type);
+  at::Tensor input= at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, {tensor_type}).to(at::kCUDA);
+  at::Tensor weight = at::from_blob((void*)inputs[1], util::toVec(inputDesc[1].dims), [](void*) {}, {tensor_type}).to(at::kCUDA);
+  at::Tensor bias = at::from_blob((void*)inputs[2], util::toVec(inputDesc[2].dims), [](void*) {}, {tensor_type}).to(at::kCUDA);
+  
   at::cuda::CUDAStream torch_stream = at::cuda::getStreamFromPool();
   at::cuda::CUDAStreamGuard torch_guard(torch_stream);
 
@@ -164,8 +162,7 @@ int LayerNormPlugin::enqueue(
   cudaStreamWaitEvent(torch_stream.stream(), event, 0);
 
   at::Tensor output_ = at::layer_norm(input, normalized_shape_, weight, bias, eps_, false);
-  output.copy_(output_);
-  
+
   cudaEvent_t torch_event;
   cudaEventCreate(&torch_event);
   cudaEventRecord(torch_event, torch_stream.stream());
@@ -175,6 +172,9 @@ int LayerNormPlugin::enqueue(
   cudaEventDestroy(event);
   cudaEventDestroy(torch_event);
 
+  size_t type_size = inputDesc[0].type == nvinfer1::DataType::kFLOAT ? sizeof(float) : sizeof(half);
+  cudaMemcpyAsync(outputs[0], output_.data_ptr(), util::volume(outputDesc[0].dims) * type_size, cudaMemcpyDeviceToDevice, stream);
+  // cudaMemcpyAsync(outputs[0], bias.data_ptr(), util::volume(outputDesc[0].dims) * type_size, cudaMemcpyDeviceToDevice, stream);
   return 0;
 }
 

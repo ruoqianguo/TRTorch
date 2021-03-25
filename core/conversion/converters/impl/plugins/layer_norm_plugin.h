@@ -25,8 +25,6 @@ namespace plugins {
 
 class LayerNormPlugin : public nvinfer1::IPluginV2DynamicExt {
  private:
-  DataType dtype_;
-
   std::vector<int64_t> normalized_shape_;
   float eps_;
 
