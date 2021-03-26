@@ -25,7 +25,6 @@ namespace plugins {
 
 class CumsumPlugin : public nvinfer1::IPluginV2DynamicExt {
  private:
-  at::TensorOptions tensor_options_;
   int64_t dim_;
 
  protected:

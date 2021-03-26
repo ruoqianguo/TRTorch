@@ -63,11 +63,6 @@ nvinfer1::DataType CumsumPlugin::getOutputDataType(int index, const nvinfer1::Da
 }
 
 int CumsumPlugin::initialize() {
-#if NV_TENSORRT_MAJOR < 7 || (NV_TENSORRT_MAJOR == 7 && NV_TENSORRT_MINOR < 1)
-  tensor_options_ = tensor_options_.device(c10::kCUDA);
-#else
-  tensor_options_ = tensor_options_.device(c10::kCPU);
-#endif
   return 0;
 }
 
@@ -105,7 +100,7 @@ bool CumsumPlugin::supportsFormatCombination(
   const PluginTensorDesc& in = inOut[0];
 
   if (pos == 0) {
-    return (in.type == nvinfer1::DataType::kFLOAT || in.type == nvinfer1::DataType::kINT32) &&
+    return (in.type == nvinfer1::DataType::kFLOAT || in.type == nvinfer1::DataType::kINT32 || in.type == nvinfer1::DataType::kHALF) &&
         (in.format == nvinfer1::TensorFormat::kLINEAR);
   }
 
@@ -136,11 +131,10 @@ int CumsumPlugin::enqueue(
     void* const* outputs,
     void* workspace,
     cudaStream_t stream) {
-  tensor_options_ = tensor_options_.dtype(util::toATenDType(inputDesc[0].type));
-#if NV_TENSORRT_MAJOR < 7 || (NV_TENSORRT_MAJOR == 7 && NV_TENSORRT_MINOR < 1)
-  at::Tensor input = at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, tensor_options_);
+  auto tensor_type = util::toATenDType(inputDesc[0].type);
+  at::Tensor input = at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
   at::Tensor output = at::from_blob(
-      outputs[0], util::volume(outputDesc->dims), [](void*) {}, tensor_options_);
+      outputs[0], util::toVec(outputDesc->dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
 
   at::cuda::CUDAStream torch_stream = at::cuda::getStreamFromPool();
   at::cuda::CUDAStreamGuard torch_guard(torch_stream);
@@ -163,32 +157,6 @@ int CumsumPlugin::enqueue(
   cudaEventDestroy(torch_event);
 
   return 0;
-#else
-  // TODO: When PyTorch updates to cuDNN 8 try moving back to CUDA based ATen
-  // kernels HACK: WAR because there is a segfault if you try to create a CUDA
-  // Tensor in the context of TensorRT execution
-  size_t size_unit = inputDesc[0].type == nvinfer1::DataType::kFLOAT ? sizeof(float) : sizeof(int32_t);
-  float* input_blob = (float*)malloc(util::volume(inputDesc[0].dims) * size_unit);
-  cudaMemcpyAsync(
-      input_blob,
-      static_cast<const void*>(inputs[0]),
-      util::volume(inputDesc[0].dims) * size_unit,
-      cudaMemcpyDeviceToHost,
-      stream);
-  cudaStreamSynchronize(stream);
-
-  at::Tensor input = at::from_blob((void*)input_blob, util::toVec(inputDesc[0].dims), tensor_options_);
-  at::Tensor output;
-  output = at::cumsum(input, dim_);
-
-  cudaMemcpyAsync(
-      outputs[0], output.data_ptr(), util::volume(outputDesc[0].dims) * size_unit, cudaMemcpyHostToDevice, stream);
-  cudaStreamSynchronize(stream);
-
-  free(input_blob);
-
-  return 0;
-#endif
 }
 
 /*
