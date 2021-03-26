@@ -149,10 +149,11 @@ int LayerNormPlugin::enqueue(
     void* workspace,
     cudaStream_t stream) {
   auto tensor_type = util::toATenDType(inputDesc[0].type);
-  at::Tensor input= at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, {tensor_type}).to(at::kCUDA);
-  at::Tensor weight = at::from_blob((void*)inputs[1], util::toVec(inputDesc[1].dims), [](void*) {}, {tensor_type}).to(at::kCUDA);
-  at::Tensor bias = at::from_blob((void*)inputs[2], util::toVec(inputDesc[2].dims), [](void*) {}, {tensor_type}).to(at::kCUDA);
-  
+  at::Tensor input= at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
+  at::Tensor weight = at::from_blob((void*)inputs[1], util::toVec(inputDesc[1].dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
+  at::Tensor bias = at::from_blob((void*)inputs[2], util::toVec(inputDesc[2].dims), [](void*) {},  at::device(at::kCUDA).dtype(tensor_type));
+  at::Tensor output = at::from_blob(outputs[0], util::toVec(outputDesc[0].dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
+
   at::cuda::CUDAStream torch_stream = at::cuda::getStreamFromPool();
   at::cuda::CUDAStreamGuard torch_guard(torch_stream);
 
@@ -162,7 +163,8 @@ int LayerNormPlugin::enqueue(
   cudaStreamWaitEvent(torch_stream.stream(), event, 0);
 
   at::Tensor output_ = at::layer_norm(input, normalized_shape_, weight, bias, eps_, false);
-
+  output.copy_(output_);
+  
   cudaEvent_t torch_event;
   cudaEventCreate(&torch_event);
   cudaEventRecord(torch_event, torch_stream.stream());
@@ -172,9 +174,6 @@ int LayerNormPlugin::enqueue(
   cudaEventDestroy(event);
   cudaEventDestroy(torch_event);
 
-  size_t type_size = inputDesc[0].type == nvinfer1::DataType::kFLOAT ? sizeof(float) : sizeof(half);
-  cudaMemcpyAsync(outputs[0], output_.data_ptr(), util::volume(outputDesc[0].dims) * type_size, cudaMemcpyDeviceToDevice, stream);
-  // cudaMemcpyAsync(outputs[0], bias.data_ptr(), util::volume(outputDesc[0].dims) * type_size, cudaMemcpyDeviceToDevice, stream);
   return 0;
 }
 
