@@ -441,11 +441,11 @@ auto aten_registrations TRTORCH_UNUSED =
                       if (args.at(n->input(0)).IValue()->isInt()) {
                         auto a = args.at(n->input(0)).unwrapToInt();
                         auto b = args.at(n->input(1)).unwrapToInt();
-                        return std::floor(a / b);
+                        return int(std::floor(a / b));
                       } else if (args.at(n->input(0)).IValue()->isDouble()) {
                         auto a = args.at(n->input(0)).unwrapToDouble();
                         auto b = args.at(n->input(1)).unwrapToDouble();
-                        return std::floor(a / b);
+                        return int(std::floor(a / b));
                       } else {
                         TRTORCH_THROW_ERROR(
                             "Unimplemented data type for aten::floordiv evaluator: "
