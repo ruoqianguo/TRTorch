@@ -99,3 +99,37 @@ TEST(Converters, ATenBoolToINT32TensorConvertsCorrectly) {
 
   ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0], trt, 2e-6));
 }
+
+TEST(Converters, ATenCastToFloatTensorConvertsCorrectly) {
+  const auto graph = R"IR(
+    graph(%x.1 : Tensor, %y.1 : Tensor):
+            %3 : int = prim::Constant[value=2]()
+            %4 : int = prim::Constant[value=3]()
+            %5 : bool = prim::Constant[value=0]()
+            %6 : None = prim::Constant()
+            %y0.1 : Tensor = aten::_cast_Float(%y.1, %5)
+            %out.1 : Tensor = aten::_cast_Float(%x.1, %5)
+            %10 : Tensor = aten::mul(%out.1, %y0.1)
+            return (%10))IR";
+
+  auto g = std::make_shared<torch::jit::Graph>();
+
+  torch::jit::parseIR(graph, &*g);
+
+  auto in = at::randint(1, 10, {3, 4, 3}, {at::kCUDA});
+  auto in2 = at::randint(1, 10, {3}, {at::kCUDA});
+
+  auto jit_in = at::clone(in);
+  auto jit_in2 = at::clone(in2);
+  auto params = trtorch::core::conversion::get_named_params(g->inputs(), {});
+  auto jit_results = trtorch::tests::util::RunGraph(g, params, {jit_in, jit_in2});
+
+  auto trt_in = at::clone(in);
+  auto trt_in2 = at::clone(in2);
+  params = trtorch::core::conversion::get_named_params(g->inputs(), {});
+  auto trt_results = trtorch::tests::util::RunGraphEngine(g, params, {trt_in, trt_in2});
+
+  auto trt = trt_results[0].reshape(jit_results[0].sizes());
+
+  ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0], trt, 2e-6));
+}

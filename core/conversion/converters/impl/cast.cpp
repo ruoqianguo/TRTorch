@@ -84,6 +84,20 @@ auto cast_registrations TRTORCH_UNUSED =
                    "Conversion to desired datatype is not supported");
                return register_cast_layer(
                    ctx, n, self, aten_to_trt_dtype_map.at(static_cast<at::ScalarType>(output_dtype)));
+             }})
+        .pattern(
+            {"aten::_cast_Float(Tensor self, bool non_blocking=False) -> (Tensor)",
+             [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
+               auto self = args[0].ITensorOrFreeze(ctx);
+               auto identity = ctx->net->addIdentity(*self);
+               TRTORCH_CHECK(identity, "Unable to create layer for aten::type_as");
+               identity->setOutputType(0, nvinfer1::DataType::kFLOAT);
+
+               identity->setName(util::node_info(n).c_str());
+               auto out_tensor = ctx->AssociateValueAndTensor(n->outputs()[0], identity->getOutput(0));
+
+               LOG_DEBUG("Output shape: " << out_tensor->getDimensions());
+               return true;
              }});
 // clang-format on
 } // namespace
