@@ -46,6 +46,7 @@ cc_library(
         "impl/normalize.cpp",
         "impl/pooling.cpp",
         "impl/reduce.cpp",
+        "impl/replication_pad.cpp",
         "impl/shuffle.cpp",
         "impl/softmax.cpp",
         "impl/unary.cpp",
