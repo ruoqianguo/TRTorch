@@ -204,7 +204,7 @@ auto expand_registrations TRTORCH_UNUSED =
                   }})
         .pattern({"aten::repeat(Tensor self, int[] repeats) -> (Tensor)",
                   [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
-                    auto in = args[0].ITensor();
+                    auto in = args[0].ITensorOrFreeze(ctx);
                     auto input_dims = in->getDimensions();
                     auto repeats = args[1].unwrapToIntList().vec();
                     TRTORCH_CHECK(
