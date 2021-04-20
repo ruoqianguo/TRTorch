@@ -39,6 +39,7 @@ cc_library(
         "impl/cumsum.cpp",
         "impl/concat.cpp",
         "impl/constant.cpp",
+        "impl/constant_pad.cpp",
         "impl/conv_deconv.cpp",
         "impl/element_wise.cpp",
         "impl/linear.cpp",
