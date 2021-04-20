@@ -167,7 +167,6 @@ TEST(Converters, ATenExpandTileLastConvertsCorrectlyWithDynamicInput) {
   ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0], trt, 2e-6));
 }
 
-
 /* Expand_as layer takes two inputs and only dimensions of second input are
    actually used. TRT prunes away the second input. This will result in internal
    failure from TRT. To avoid unrelated issues, we add a dummy operation which
@@ -236,7 +235,6 @@ TEST(Converters, ATenExpandAsConvertsCorrectlyWithDynamicInput) {
 
   ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0], trt, 2e-6));
 }
-
 
 TEST(Converters, ATenRepeatConvertsCorrectly) {
   const auto graph = R"IR(

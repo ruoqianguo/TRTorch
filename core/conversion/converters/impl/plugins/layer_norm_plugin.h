@@ -118,10 +118,7 @@ class LayerNormPluginCreator : public nvinfer1::IPluginCreator {
 
   nvinfer1::IPluginV2* createPlugin(const char* name, const nvinfer1::PluginFieldCollection* fc) override;
 
-  LayerNormPlugin* createPlugin(
-      const char* name,
-      std::vector<int64_t> normalized_shape,
-      float eps);
+  LayerNormPlugin* createPlugin(const char* name, std::vector<int64_t> normalized_shape, float eps);
 
   nvinfer1::IPluginV2* deserializePlugin(const char* name, const void* serialData, size_t serialLength) override;
 

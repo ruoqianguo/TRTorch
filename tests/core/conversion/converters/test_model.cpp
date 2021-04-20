@@ -5,20 +5,20 @@
 #include "trtorch/trtorch.h"
 // #include "nvToolsExt.h"
 
+#include <iostream>
 #include <typeinfo>
 #include "core/compiler.h"
 #include "gtest/gtest.h"
 #include "tests/util/util.h"
 #include "torch/csrc/jit/ir/irparser.h"
-#include <iostream>
 
 TEST(Converters, ModelTestCorrectly) {
   // Done 1 input
-    // std::string path =
-    //     "/home/ryan/work/data/TRTModel/dolly.feature.blaid.zip";
-    // std::string path_trt =
-    //     "/home/ryan/work/data/TRTModel/dolly.feature.blaid_trt.zip";
-    // torch::Tensor in0 = torch::randn({64, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
+  // std::string path =
+  //     "/home/ryan/work/data/TRTModel/dolly.feature.blaid.zip";
+  // std::string path_trt =
+  //     "/home/ryan/work/data/TRTModel/dolly.feature.blaid_trt.zip";
+  // torch::Tensor in0 = torch::randn({64, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
   //   torch::Tensor in1 = torch::randn({64, 1, 64, 64}, torch::kCUDA).to(torch::kFloat);
 
   // // Done 1 input
@@ -61,14 +61,15 @@ TEST(Converters, ModelTestCorrectly) {
 
   // 1 input done
   // std::string path =
-  // "/home/ryan/work/data/TRTModel/torchnative_fp32_3x224x224/model.ts.zip"; 
-  // torch::Tensor in0 = torch::randn({1, 3, 224, 224}, torch::kCUDA).to(torch::kFloat); 
-  
+  // "/home/ryan/work/data/TRTModel/torchnative_fp32_3x224x224/model.ts.zip";
+  // torch::Tensor in0 = torch::randn({1, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
+
   // torch::Tensor in0_ = in0.clone().to(torch::kFloat);
 
   // 1 input done
-  // std::string path = "/home/vincentzh/Projects/ByteDanceModel/model/vc_dolly_grou_heyi/dolly.feature.bac_sunwanxuan_8/bac_model_deploy_v1.pt";
-  // torch::Tensor in0 = torch::randn({1, 48, 224, 224}, torch::kCUDA).to(torch::kFloat); 
+  // std::string path =
+  // "/home/vincentzh/Projects/ByteDanceModel/model/vc_dolly_grou_heyi/dolly.feature.bac_sunwanxuan_8/bac_model_deploy_v1.pt";
+  // torch::Tensor in0 = torch::randn({1, 48, 224, 224}, torch::kCUDA).to(torch::kFloat);
   // torch::Tensor in1 = torch::randn({1, 300,  128}, torch::kCUDA).to(torch::kFloat);
 
   // 9 input done1 done2
@@ -97,13 +98,14 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in7_ = in7.clone().to(torch::kI64);
   // torch::Tensor in8_ = in8.clone().to(torch::kI64);
 
-
   // 9 input
   // std::string path =
   // "/home/vincentzh/Projects/ByteDanceModel/model/0202_new_high_dau/end2end_models_douyin_first_review_v3_wangke.88_7/douyin_first_review_model_fp32.pt.zip";
-  // std::string path = "/home/ryan/work/data/TRTModel/end2end_models_douyin_first_review_v3_wangke.88_7/douyin_first_review_model_fp32.pt.zip"
-  // std::string path = "/home/ryan/work/data/TRTModel/end2end_models_douyin_report_v3_user_verify_service_24/douyin_report_model_fp32.pt.zip"
-  
+  // std::string path =
+  // "/home/ryan/work/data/TRTModel/end2end_models_douyin_first_review_v3_wangke.88_7/douyin_first_review_model_fp32.pt.zip"
+  // std::string path =
+  // "/home/ryan/work/data/TRTModel/end2end_models_douyin_report_v3_user_verify_service_24/douyin_report_model_fp32.pt.zip"
+
   // torch::Tensor in0 = torch::randn({128, 203}, torch::kCUDA).to(torch::kLong);
   // torch::Tensor in1 = torch::randn({128, 203}, torch::kCUDA).to(torch::kLong);
   // torch::Tensor in2 = torch::randn({8, 64}, torch::kCUDA).to(torch::kLong);
@@ -133,18 +135,18 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in5_ = in5.clone().to(torch::kI64);
   // torch::Tensor in6_ = in6.clone().to(torch::kI64);
 
-  // 1 input 
+  // 1 input
   // std::string path =
   // "/home/ryan/work/data/TRTModel/labvc.dungeon.searchnet_liuyongchao.eric_1/labvc.dungeon.searchnet.pt";
   // torch::Tensor in0 = torch::randn({64, 1, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
-  
+
   // torch::Tensor in0_ = in0.clone().to(torch::kFloat);
 
   // 1 input done
   // std::string path =
   // "/home/ryan/work/data/TRTModel/labvc.dungeon.regnet_zhudefa_7/labvc.dungeon.moco_simclr.pt";
   // torch::Tensor in0 = torch::randn({64, 1, 3, 224, 224}, torch::kCUDA).to(torch::kFloat);
-  
+
   // torch::Tensor in0_ = in0.clone().to(torch::kFloat);
 
   //   std::string path = "/home/vincent/Projects/ByteDanceModel/model/traced/image_sp/test.zip"
@@ -159,11 +161,13 @@ TEST(Converters, ModelTestCorrectly) {
   torch::Tensor in1_ = in1.clone().to(torch::kI64);
 
   // // 2 input done  0.00259606
-  // std::string path = "/home/ryan/work/data/TRTModel/ad_vse_inf_text_60m_128dim_chenjiacheng.cjc_5/vse_inf_text_60m_128dim.zip";
-  // std::string path_trt = "/home/ryan/work/data/TRTModel/ad_vse_inf_text_60m_128dim_chenjiacheng.cjc_5/vse_inf_text_60m_128dim_trt.zip";
+  // std::string path =
+  // "/home/ryan/work/data/TRTModel/ad_vse_inf_text_60m_128dim_chenjiacheng.cjc_5/vse_inf_text_60m_128dim.zip";
+  // std::string path_trt =
+  // "/home/ryan/work/data/TRTModel/ad_vse_inf_text_60m_128dim_chenjiacheng.cjc_5/vse_inf_text_60m_128dim_trt.zip";
   // torch::Tensor in0 = torch::randint(1, 2, {8, 256}, torch::kCUDA).to(torch::kFloat);
   // torch::Tensor in1 = torch::randint(1, 2, {8}, torch::kCUDA).to(torch::kFloat);
-  
+
   // torch::Tensor in0_ = in0.clone().to(torch::kI64);
   // torch::Tensor in1_ = in1.clone().to(torch::kI64);
 
@@ -178,8 +182,6 @@ TEST(Converters, ModelTestCorrectly) {
   // torch::Tensor in0 = torch::randint(1, 2, {1, 3, 1000, 1000}, torch::kCUDA).to(torch::kFloat);
 
   // torch::Tensor in0_ = in0.clone().to(torch::kFloat);
-
-
 
   std::vector<at::Tensor> inputs;
   std::vector<at::Tensor> inputs_trt;
@@ -225,7 +227,7 @@ TEST(Converters, ModelTestCorrectly) {
   // nvtxRangePushA("ComplieGraph");
   auto compile_settings = trtorch::CompileSpec(std::vector<trtorch::CompileSpec::InputRange>{in0.sizes(), in1.sizes()});
   // auto compile_settings = trtorch::CompileSpec(std::vector<trtorch::CompileSpec::InputRange>{in0.sizes()});
-// FP16 execution
+  // FP16 execution
   compile_settings.op_precision = torch::kHalf;
   auto trt_mod = trtorch::CompileGraph(mod, compile_settings);
   trt_mod.save(path_trt);
@@ -239,7 +241,6 @@ TEST(Converters, ModelTestCorrectly) {
   //     std::vector<trtorch::CompileSpec::InputRange>{
   //         in0.sizes(), in1.sizes(), in2.sizes(), in3.sizes(), in4.sizes(), in5.sizes(), in6.sizes()});
   // std::cout << "trtorch::CompileGraph" << std::endl;
-
 
   auto out = mod.forward(inputs_);
   std::cout << "mod forward" << std::endl;
@@ -268,9 +269,10 @@ TEST(Converters, ModelTestCorrectly) {
   // auto trt_out = trtorch::tests::util::RunModuleForward(trt_mod, trt1_inputs_ivalues);
 
   // ASSERT_TRUE(trtorch::tests::util::almostEqual(out.toTensor(), trt_out.toTensor(), 1e-2));
-  // ASSERT_TRUE(trtorch::tests::util::almostEqual(out.toTuple()->elements()[0].toTensor(), trt_out.toTuple()->elements()[0].toTensor(), 1e-2));
+  // ASSERT_TRUE(trtorch::tests::util::almostEqual(out.toTuple()->elements()[0].toTensor(),
+  // trt_out.toTuple()->elements()[0].toTensor(), 1e-2));
   ASSERT_TRUE(trtorch::tests::util::almostEqual(out.toTuple()->elements()[0].toTensor(), trt_out.toTensor(), 1e-2));
-  
+
   // ASSERT_TRUE(trtorch::tests::util::almostEqual(
   //     out.toTuple()->elements()[0].toTensor(), trt_out.toTuple()->elements()[0].toTensor(), 1e-2));
   // ASSERT_TRUE(trtorch::tests::util::almostEqual(

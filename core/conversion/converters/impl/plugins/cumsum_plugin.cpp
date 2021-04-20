@@ -100,7 +100,8 @@ bool CumsumPlugin::supportsFormatCombination(
   const PluginTensorDesc& in = inOut[0];
 
   if (pos == 0) {
-    return (in.type == nvinfer1::DataType::kFLOAT || in.type == nvinfer1::DataType::kINT32 || in.type == nvinfer1::DataType::kHALF) &&
+    return (in.type == nvinfer1::DataType::kFLOAT || in.type == nvinfer1::DataType::kINT32 ||
+            in.type == nvinfer1::DataType::kHALF) &&
         (in.format == nvinfer1::TensorFormat::kLINEAR);
   }
 
@@ -132,7 +133,8 @@ int CumsumPlugin::enqueue(
     void* workspace,
     cudaStream_t stream) {
   auto tensor_type = util::toATenDType(inputDesc[0].type);
-  at::Tensor input = at::from_blob((void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
+  at::Tensor input = at::from_blob(
+      (void*)inputs[0], util::toVec(inputDesc[0].dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
   at::Tensor output = at::from_blob(
       outputs[0], util::toVec(outputDesc->dims), [](void*) {}, at::device(at::kCUDA).dtype(tensor_type));
 
@@ -202,4 +204,4 @@ REGISTER_TENSORRT_PLUGIN(CumsumPluginCreator);
 } // namespace converters
 } // namespace conversion
 } // namespace core
-} // namespace trtorch 
+} // namespace trtorch

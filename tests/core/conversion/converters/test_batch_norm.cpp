@@ -2,8 +2,8 @@
 #include "core/compiler.h"
 #include "gtest/gtest.h"
 #include "tests/util/util.h"
-#include "torch/script.h"
 #include "torch/csrc/jit/ir/irparser.h"
+#include "torch/script.h"
 
 TEST(Converters, ATenBatchNormConvertsCorrectly) {
   const auto graph = R"IR(

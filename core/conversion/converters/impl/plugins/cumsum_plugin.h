@@ -131,4 +131,4 @@ class CumsumPluginCreator : public nvinfer1::IPluginCreator {
 } // namespace core
 } // namespace trtorch
 
-#endif // TRTORCH_INTERPOLATE_PLUGIN_H 
+#endif // TRTORCH_INTERPOLATE_PLUGIN_H

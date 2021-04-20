@@ -68,7 +68,8 @@ bool replication_padXd(ConversionCtx* ctx, const torch::jit::Node* n, args& args
         auto dimTensor = tensor_to_const(ctx, dimValue);
         indicesTensor = ctx->net->addGather(*shapeTensor, *dimTensor, 0)->getOutput(0);
         auto oneTensor = tensor_to_const(ctx, torch::tensor({1}, torch::kInt32));
-        indicesTensor = ctx->net->addElementWise(*indicesTensor, *oneTensor, nvinfer1::ElementWiseOperation::kSUB)->getOutput(0);
+        indicesTensor =
+            ctx->net->addElementWise(*indicesTensor, *oneTensor, nvinfer1::ElementWiseOperation::kSUB)->getOutput(0);
       } else {
         auto indices = torch::tensor({inDims.d[axis] - 1}, torch::kInt32);
         indicesTensor = tensor_to_const(ctx, indices);

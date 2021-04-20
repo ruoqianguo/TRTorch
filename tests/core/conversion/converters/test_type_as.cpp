@@ -28,4 +28,4 @@ TEST(Converters, ATenTypeAsConvertsCorrectly) {
   auto trt_results = trtorch::tests::util::RunGraphEngine(g, params, {in1, in2});
 
   ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0], trt_results[0].reshape_as(jit_results[0]), 2e-6));
-} 
+}

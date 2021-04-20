@@ -370,11 +370,14 @@ auto element_wise_registrations TRTORCH_UNUSED =
                       auto other_id = ctx->net->addIdentity(*other);
                       self_id->getOutput(0)->setType(nvinfer1::DataType::kFLOAT);
                       other_id->getOutput(0)->setType(nvinfer1::DataType::kFLOAT);
-                      div =
-                        add_elementwise(ctx, nvinfer1::ElementWiseOperation::kDIV, self_id->getOutput(0), other_id->getOutput(0), util::node_info(n));
+                      div = add_elementwise(
+                          ctx,
+                          nvinfer1::ElementWiseOperation::kDIV,
+                          self_id->getOutput(0),
+                          other_id->getOutput(0),
+                          util::node_info(n));
                     } else {
-                      div =
-                          add_elementwise(ctx, nvinfer1::ElementWiseOperation::kDIV, self, other, util::node_info(n));
+                      div = add_elementwise(ctx, nvinfer1::ElementWiseOperation::kDIV, self, other, util::node_info(n));
                     }
 
                     TRTORCH_CHECK(div, "Unable to create div layer from node: " << *n);
@@ -396,11 +399,14 @@ auto element_wise_registrations TRTORCH_UNUSED =
                       auto other_id = ctx->net->addIdentity(*other);
                       self_id->getOutput(0)->setType(nvinfer1::DataType::kFLOAT);
                       other_id->getOutput(0)->setType(nvinfer1::DataType::kFLOAT);
-                      div =
-                        add_elementwise(ctx, nvinfer1::ElementWiseOperation::kDIV, self_id->getOutput(0), other_id->getOutput(0), util::node_info(n));
+                      div = add_elementwise(
+                          ctx,
+                          nvinfer1::ElementWiseOperation::kDIV,
+                          self_id->getOutput(0),
+                          other_id->getOutput(0),
+                          util::node_info(n));
                     } else {
-                      div =
-                          add_elementwise(ctx, nvinfer1::ElementWiseOperation::kDIV, self, other, util::node_info(n));
+                      div = add_elementwise(ctx, nvinfer1::ElementWiseOperation::kDIV, self, other, util::node_info(n));
                     }
 
                     TRTORCH_CHECK(div, "Unable to create div layer from node: " << *n);
@@ -567,9 +573,9 @@ auto element_wise_registrations TRTORCH_UNUSED =
                     // auto output_cast = ctx->net->addIdentity(*sub->getOutput(0));
                     // output_cast->setOutputType(0, nvinfer1::DataType::kINT32);
                     // auto out = ctx->AssociateValueAndTensor(n->outputs()[0], output_cast->getOutput(0));
-                    
+
                     auto out = ctx->AssociateValueAndTensor(n->outputs()[0], sub->getOutput(0));
-                    
+
                     LOG_DEBUG("Not equal layer output tensor shape: " << out->getDimensions());
                     return true;
                   }})

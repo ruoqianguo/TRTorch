@@ -53,8 +53,9 @@ TEST(Converters, ATenSelectIntDimIsOneConvertsCorrectly) {
   params = trtorch::core::conversion::get_named_params(g->inputs(), {});
   auto trt_results = trtorch::tests::util::RunGraphEngine(g, params, {trt_in});
 
-  // In order to check whether shape match that we don't do reshape. 
-  // E.g. x = at::randint(1, 10, {4, 4, 4}, {at::kCUDA}), then select(x, 1, 0). We should get a tensor y with shape {4, 4} instead of a tensor with shape {4, 1, 4}. 
+  // In order to check whether shape match that we don't do reshape.
+  // E.g. x = at::randint(1, 10, {4, 4, 4}, {at::kCUDA}), then select(x, 1, 0). We should get a tensor y with shape {4,
+  // 4} instead of a tensor with shape {4, 1, 4}.
   ASSERT_TRUE(trtorch::tests::util::almostEqual(jit_results[0], trt_results[0], 2e-6));
 }
 

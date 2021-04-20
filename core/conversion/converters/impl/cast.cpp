@@ -32,8 +32,8 @@ auto cast_registrations TRTORCH_UNUSED =
              [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
                auto self = args[0].ITensorOrFreeze(ctx);
                auto output_dtype = args[1].unwrapToScalar().to<int64_t>();
-               if(output_dtype == 4)
-                output_dtype = 3;
+               if (output_dtype == 4)
+                 output_dtype = 3;
                auto aten_to_trt_dtype_map = util::get_aten_trt_type_map();
                TRTORCH_CHECK(
                    aten_to_trt_dtype_map.find(static_cast<at::ScalarType>(output_dtype)) != aten_to_trt_dtype_map.end(),
@@ -61,8 +61,8 @@ auto cast_registrations TRTORCH_UNUSED =
              [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
                auto self = args[0].ITensorOrFreeze(ctx);
                auto output_dtype = args[1].unwrapToScalar().to<int64_t>();
-               if(output_dtype == 4)
-                output_dtype = 3;
+               if (output_dtype == 4)
+                 output_dtype = 3;
                auto aten_to_trt_dtype_map = util::get_aten_trt_type_map();
                TRTORCH_CHECK(
                    aten_to_trt_dtype_map.find(static_cast<at::ScalarType>(output_dtype)) != aten_to_trt_dtype_map.end(),
@@ -70,14 +70,14 @@ auto cast_registrations TRTORCH_UNUSED =
                return register_cast_layer(
                    ctx, n, self, aten_to_trt_dtype_map.at(static_cast<at::ScalarType>(output_dtype)));
              }})
-             
+
         .pattern(
             {"aten::to.dtype(Tensor self, ScalarType dtype, bool non_blocking=False, bool copy=False, MemoryFormat? memory_format=None) -> (Tensor)",
              [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
                auto self = args[0].ITensorOrFreeze(ctx);
                auto output_dtype = args[1].unwrapToScalar().to<int64_t>();
-               if(output_dtype == 4)
-                output_dtype = 3;
+               if (output_dtype == 4)
+                 output_dtype = 3;
                auto aten_to_trt_dtype_map = util::get_aten_trt_type_map();
                TRTORCH_CHECK(
                    aten_to_trt_dtype_map.find(static_cast<at::ScalarType>(output_dtype)) != aten_to_trt_dtype_map.end(),
@@ -85,20 +85,19 @@ auto cast_registrations TRTORCH_UNUSED =
                return register_cast_layer(
                    ctx, n, self, aten_to_trt_dtype_map.at(static_cast<at::ScalarType>(output_dtype)));
              }})
-        .pattern(
-            {"aten::_cast_Float(Tensor self, bool non_blocking=False) -> (Tensor)",
-             [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
-               auto self = args[0].ITensorOrFreeze(ctx);
-               auto identity = ctx->net->addIdentity(*self);
-               TRTORCH_CHECK(identity, "Unable to create layer for aten::type_as");
-               identity->setOutputType(0, nvinfer1::DataType::kFLOAT);
+        .pattern({"aten::_cast_Float(Tensor self, bool non_blocking=False) -> (Tensor)",
+                  [](ConversionCtx* ctx, const torch::jit::Node* n, args& args) -> bool {
+                    auto self = args[0].ITensorOrFreeze(ctx);
+                    auto identity = ctx->net->addIdentity(*self);
+                    TRTORCH_CHECK(identity, "Unable to create layer for aten::type_as");
+                    identity->setOutputType(0, nvinfer1::DataType::kFLOAT);
 
-               identity->setName(util::node_info(n).c_str());
-               auto out_tensor = ctx->AssociateValueAndTensor(n->outputs()[0], identity->getOutput(0));
+                    identity->setName(util::node_info(n).c_str());
+                    auto out_tensor = ctx->AssociateValueAndTensor(n->outputs()[0], identity->getOutput(0));
 
-               LOG_DEBUG("Output shape: " << out_tensor->getDimensions());
-               return true;
-             }});
+                    LOG_DEBUG("Output shape: " << out_tensor->getDimensions());
+                    return true;
+                  }});
 // clang-format on
 } // namespace
 } // namespace impl

@@ -28,10 +28,10 @@ bool add_split(ConversionCtx* ctx, const torch::jit::Node* n, args& args, bool s
     auto split_size = args[1].unwrapToInt();
     numOutputs = inDimSize / split_size;
     numRemainder = inDimSize % split_size;
-    for(int i=0;i<numOutputs;i++){
+    for (int i = 0; i < numOutputs; i++) {
       sizes.push_back(split_size);
     }
-    if(numRemainder){
+    if (numRemainder) {
       numOutputs += 1;
       sizes.push_back(numRemainder);
     }
@@ -90,7 +90,7 @@ auto select_registrations TRTORCH_UNUSED =
                     auto gather_layer = ctx->net->addGather(*in, *const_out, axis);
                     TRTORCH_CHECK(gather_layer, "Unable to create gather layer from node: " << *n);
                     auto gather_out = gather_layer->getOutput(0);
-                    LOG_DEBUG("gather_out size " << gather_out->getDimensions() << ", axis "<< axis);
+                    LOG_DEBUG("gather_out size " << gather_out->getDimensions() << ", axis " << axis);
 
                     // IShuffleLayer removes redundant dimensions
                     auto shuffle_layer = ctx->net->addShuffle(*gather_out);
@@ -182,10 +182,10 @@ auto select_registrations TRTORCH_UNUSED =
                auto embeddingTensor = args[0].ITensorOrFreeze(ctx);
                auto indicesTensor = args[1].ITensorOrFreeze(ctx);
                // Set datatype for indices tensor to INT32
-              //  indicesTensor->setType(nvinfer1::DataType::kINT32);
-              auto identity = ctx->net->addIdentity(*indicesTensor);
-              identity->setOutputType(0, nvinfer1::DataType::kINT32);
-              indicesTensor = identity->getOutput(0);
+               //  indicesTensor->setType(nvinfer1::DataType::kINT32);
+               auto identity = ctx->net->addIdentity(*indicesTensor);
+               identity->setOutputType(0, nvinfer1::DataType::kINT32);
+               indicesTensor = identity->getOutput(0);
 
                // IGatherLayer takes in input tensor, the indices, and the axis of input tensor to take indices from
                auto gather_layer = ctx->net->addGather(*embeddingTensor, *indicesTensor, 0);

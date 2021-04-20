@@ -176,17 +176,17 @@ auto aten_registrations TRTORCH_UNUSED =
                         }
                       } else {
                         auto dim = args.at(n->input(1)).unwrapToInt();
-                        if (tensor_var.isITensor()) {                          
+                        if (tensor_var.isITensor()) {
                           auto tensor = tensor_var.ITensor();
                           auto dims = util::toVec(tensor->getDimensions());
                           auto nbDims = tensor->getDimensions().nbDims;
-                          if(dim < 0)
+                          if (dim < 0)
                             dim += nbDims;
                           return dims[dim];
                         } else {
                           auto tensor = tensor_var.unwrapToTensor();
                           auto nbDims = tensor.sizes().size();
-                          if(dim < 0)
+                          if (dim < 0)
                             dim += nbDims;
                           return tensor.sizes()[dim];
                         }

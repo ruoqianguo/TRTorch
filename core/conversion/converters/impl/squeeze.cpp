@@ -25,7 +25,7 @@ auto squeeze_registrations TRTORCH_UNUSED = RegisterNodeConversionPatterns().pat
          dim = selfDim.size() + dim;
        }
 
-       if(selfDim[dim] != 1){
+       if (selfDim[dim] != 1) {
          auto out = ctx->AssociateValueAndTensor(n->outputs()[0], self);
 
          LOG_DEBUG("Output tensor shape: " << out->getDimensions());

@@ -202,8 +202,6 @@ TEST(Converters, ATenFloorDivideWithScalarConvertsCorrectly) {
   pointwise_test_helper(graph, true);
 }
 
-
-
 TEST(Converters, ATenMinConvertsCorrectly) {
   const auto graph = R"IR(
       graph(%0 : Tensor, %1 : Tensor):
@@ -369,9 +367,6 @@ TEST(Converters, ATenLEScalarConvertsCorrectly) {
       return (%2))IR";
   pointwise_test_helper(graph, true, false, {5, 5});
 }
-
-
-
 
 TEST(Converters, ATenMaxConvertsCorrectly) {
   const auto graph = R"IR(
